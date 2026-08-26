@@ -1,0 +1,49 @@
+# ROS / Autoware
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# CARLA / Unreal Engine
+Carla-*/
+UnrealEngine*/
+Saved/
+Intermediate/
+DerivedDataCache/
+*.pak
+*.ucas
+*.utoc
+
+# Binary Python packages
+*.whl
+*.egg
+
+# ROS bags
+rosbag2_*/
+*.db3
+*.mcap
+
+# Machine-learning models
+*.onnx
+*.engine
+*.pth
+*.pt
+
+# Datasets
+datasets/
+data/raw/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
