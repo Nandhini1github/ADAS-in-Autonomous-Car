@@ -1,0 +1,50 @@
+{
+  "carla": {
+    "host": "host.docker.internal",
+    "port": 2000,
+    "timeout_s": 10.0,
+    "map": "Town10HD_Opt",
+    "fixed_delta_seconds": 0.05,
+    "synchronous_mode": true,
+    "ego_blueprint": "vehicle.lincoln.mkz_2020",
+    "target_blueprint": "vehicle.dodge.charger_2020"
+  },
+  "scenario": {
+    "ego_speed_mph": 15.0,
+    "target_speed_mph": 10.0,
+    "initial_gap_m": 80.0,
+    "route_minimum_m": 400.0,
+    "stable_tolerance_mph": 1.0,
+    "stable_hold_s": 3.0,
+    "target_brake": 1.0,
+    "stop_speed_mph": 1.0,
+    "stop_hold_s": 1.0,
+    "timeout_s": 75.0,
+    "retain_actors_s": 5.0
+  },
+  "controllers": {
+    "wheelbase_m": 2.85,
+    "wheel_max_angle_deg": 35.0,
+    "lookahead_base_m": 6.0,
+    "lookahead_gain_s": 0.45,
+    "max_steer": 0.18,
+    "speed_kp": 0.09,
+    "speed_ki": 0.012,
+    "speed_kd": 0.01,
+    "max_throttle": 0.60,
+    "service_brake_decel_mps2": 4.0,
+    "fcw_ttc_s": 3.0,
+    "aeb_ttc_s": 2.0,
+    "aeb_distance_margin_m": 5.0,
+    "max_aeb_decel_mps2": 8.0,
+    "aeb_pid_kp": 0.45,
+    "aeb_pid_ki": 0.07,
+    "aeb_pid_kd": 0.02,
+    "aeb_pid_target_decel_mps2": 6.5,
+    "mpc_horizon_s": 2.5,
+    "mpc_step_s": 0.05
+  },
+  "logging": {
+    "output_directory": "results"
+  }
+}
