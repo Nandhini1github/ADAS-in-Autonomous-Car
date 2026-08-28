@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Summarize either canonical Town10 PID or MPC result CSV."""
+"""Summarize Town10 PID or MPC result CSV."""
 
 import argparse
 import csv
