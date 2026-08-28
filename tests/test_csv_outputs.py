@@ -42,6 +42,17 @@ class CsvOutputTests(unittest.TestCase):
             self.assertEqual(reader.fieldnames, FIELDNAMES)
             self.assertEqual(len(rows), 1)
 
+    def test_checked_in_pid_and_mpc_placeholders_match_schema(self) -> None:
+        for controller_name in ("pid", "mpc"):
+            output = ROOT / "results" / f"town10_aeb_{controller_name}.csv"
+            with self.subTest(controller=controller_name):
+                self.assertTrue(output.is_file())
+                with output.open(newline="", encoding="utf-8") as stream:
+                    reader = csv.DictReader(stream)
+                    rows = list(reader)
+                self.assertEqual(reader.fieldnames, FIELDNAMES)
+                self.assertEqual(rows, [])
+
 
 if __name__ == "__main__":
     unittest.main()
