@@ -1,67 +1,56 @@
 # System Architecture
 
-## Objective
+## Direct scenario-control path
 
-This project develops a simulation and validation platform for Advanced
-Driver Assistance Systems (ADAS) using CARLA, Autoware, and ROS 2.
+```text
+config/town10_adas.json
+          │
+          ▼
+ScenarioOrchestrator ──► target cruise / hard-brake state
+          │
+          ├──► Pure Pursuit ──────────────► ego steering
+          ├──► Longitudinal PID ──────────► cruise throttle/brake
+          └──► FCW/TTC SafetySupervisor
+                         │
+                         ├──► AEB PID ─┐
+                         └──► AEB MPC ─┴──► ego emergency brake
+                                             │
+                                             ▼
+                                CARLA Python API 0.10.0
+                                             │
+                                             ▼
+                                CARLA Town10HD_Opt actors
+```
 
-## Validated Architecture
+PID and MPC share the same scenario, lateral controller, trigger logic, units, and
+CSV logger. Only the emergency-brake law changes.
 
+## Existing ROS 2 / Autoware observation path
+
+```text
 CARLA 0.10.0
-    |
-    | RPC / TCP 2000
-    v
-CARLA Python API 0.10.0
-    |
-    v
+      │
+      ▼
 autoware_carla_interface
-    |
-    v
-ROS 2 Jazzy
-    |
-    v
+      │
+      ▼
+ROS 2 Jazzy topics ──► town10_adas_monitor (read-only)
+      │
+      ▼
 Autoware 1.9.0
+```
 
-## Simulation Configuration
+The direct scenario runner does not publish Autoware control commands. Running it
+against an actor already controlled by Autoware would create competing control
+authority and is unsupported. The ROS 2 package deliberately subscribes only to
+vehicle status so this boundary remains explicit. The direct actor uses the
+`scenario_ego` role rather than Autoware's conventional `ego_vehicle` role.
 
-- CARLA: 0.10.0
-- Autoware: 1.9.0
-- ROS 2: Jazzy
-- Python: 3.12
-- Map: Town10HD_Opt
-- Ego vehicle: Lincoln MKZ
-- ROS middleware: Fast DDS
-- Development environment: Ubuntu 24.04 LTS-based Docker environment
+## Runtime safety boundaries
 
-## Sensors
-
-The current lightweight sensor configuration includes:
-
-- Front RGB camera
-- Top LiDAR
-- GNSS
-- IMU
-
-Verified ROS 2 interfaces include:
-
-- `/sensing/camera/CAM_FRONT/image_raw`
-- `/sensing/camera/CAM_FRONT/camera_info`
-- `/sensing/lidar/top/pointcloud_before_sync`
-- `/sensing/gnss/pose_with_covariance`
-- `/sensing/imu/tamagawa/imu_raw`
-- `/vehicle/status/velocity_status`
-- `/vehicle/status/steering_status`
-- `/vehicle/status/gear_status`
-
-## Current Milestone
-
-CARLA 0.10.0 and Autoware 1.9.0 communication has been established.
-
-A Lincoln MKZ has been spawned as the Autoware `ego_vehicle` in
-Town10HD_Opt, and its sensor and vehicle-state interfaces are available
-through ROS 2.
-
-## Next Phase
-
-The platform will be used to develop reproducible ADAS scenarios and
-evaluate vehicle behavior using quantitative engineering metrics.
+- The map name must end in `Town10HD_Opt` or the runner exits.
+- A route is built before actor control starts and must exceed the configured length.
+- FCW/AEB logic is independent from PID/MPC selection.
+- AEB is latched for the remainder of an event.
+- Completion depends on an actual stopped ego, never distance to route end.
+- Actor cleanup occurs in `finally`, and original CARLA world settings are restored.
