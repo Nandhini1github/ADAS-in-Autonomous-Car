@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Convenience entry point that works from a source checkout."""
 
 from pathlib import Path
 import sys
