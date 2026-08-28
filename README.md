@@ -91,17 +91,34 @@ The output must end in `Town10HD_Opt` before running the scenario.
 From the repository root inside the Autoware/CARLA container:
 
 ```bash
-python3 -m unittest discover -s tests -v
-python3 -m compileall -q src scripts tests
-python3 scripts/run_town10_adas.py --controller pid
-python3 scripts/run_town10_adas.py --controller mpc
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v
+python3 scripts/run_town10_adas.py --controller both
 ```
 
-Logs are written to:
+The command runs the same scenario once with PID and once with MPC. Each run
+overwrites its assigned file, so the `results` directory contains one canonical CSV
+per controller rather than accumulating duplicate logs:
 
 ```text
 results/town10_aeb_pid.csv
 results/town10_aeb_mpc.csv
+```
+
+The repository does not ignore these files, so completed PID and MPC results are
+visible to Git and can be committed as simulation evidence.
+
+Both files use the uploaded Town10 reference schema:
+
+```text
+time_s,phase,ego_speed_mph,target_speed_mph,distance_m,closing_speed_mph,
+ttc_s,fcw,aeb_active,brake_percent,ego_steer,ego_accel_mps2
+```
+
+Run only one controller when a comparison pair is not required:
+
+```bash
+python3 scripts/run_town10_adas.py --controller pid
+python3 scripts/run_town10_adas.py --controller mpc
 ```
 
 Summarize either run and confirm that it actually exercised AEB:
@@ -119,6 +136,9 @@ python3 scripts/run_town10_adas.py \
   --config config/town10_adas.json \
   --output results/my_pid_run.csv
 ```
+
+`--output` is available only for a single-controller run. It is intentionally
+rejected with `--controller both` so the two comparison filenames remain unambiguous.
 
 ## ROS 2 and Autoware usage
 
