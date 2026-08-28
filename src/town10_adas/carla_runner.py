@@ -306,14 +306,32 @@ def run(config: AppConfig, controller_name: str, output_path: Path) -> int:
             world.apply_settings(original_settings)
 
 
+def default_output_path(config: AppConfig, controller_name: str) -> Path:
+    """Return the one stable result path assigned to each AEB controller."""
+    return Path(config.logging.output_directory) / f"town10_aeb_{controller_name}.csv"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the modular Town10 AEB scenario")
-    parser.add_argument("--controller", choices=("pid", "mpc"), default="pid")
+    parser.add_argument("--controller", choices=("pid", "mpc", "both"), default="both")
     parser.add_argument("--config", default="config/town10_adas.json")
-    parser.add_argument("--output", default=None)
+    parser.add_argument(
+        "--output",
+        default=None,
+        help="custom CSV path for a single PID or MPC run; unavailable with --controller both",
+    )
     args = parser.parse_args()
     config = load_config(args.config)
-    output = Path(args.output or Path(config.logging.output_directory) / f"town10_aeb_{args.controller}.csv")
+    if args.controller == "both":
+        if args.output is not None:
+            parser.error("--output cannot be used with --controller both")
+        results = [
+            run(config, controller_name, default_output_path(config, controller_name))
+            for controller_name in ("pid", "mpc")
+        ]
+        return max(results)
+
+    output = Path(args.output) if args.output else default_output_path(config, args.controller)
     return run(config, args.controller, output)
 
 
