@@ -107,6 +107,10 @@ results/town10_aeb_mpc.csv
 The repository does not ignore these files, so completed PID and MPC results are
 visible to Git and can be committed as simulation evidence.
 
+The checked-in files contain the verified header only. A CARLA comparison run
+overwrites both placeholders with real samples; the repository does not include
+fabricated PID or MPC measurements.
+
 Both files use the uploaded Town10 reference schema:
 
 ```text
@@ -128,17 +132,10 @@ python3 scripts/analyze_aeb_csv.py results/town10_aeb_pid.csv
 python3 scripts/analyze_aeb_csv.py results/town10_aeb_mpc.csv
 ```
 
-Use an explicit path or alternative configuration when needed:
-
-```bash
-python3 scripts/run_town10_adas.py \
-  --controller pid \
-  --config config/town10_adas.json \
-  --output results/my_pid_run.csv
-```
-
-`--output` is available only for a single-controller run. It is intentionally
-rejected with `--controller both` so the two comparison filenames remain unambiguous.
+Use `--config config/town10_adas.json` to run the same output pair with an adjusted
+scenario configuration. The optional `--output` argument is available only for a
+single-controller run and is intentionally rejected with `--controller both` so the
+two comparison filenames remain unambiguous.
 
 ## ROS 2 and Autoware usage
 
