@@ -212,8 +212,8 @@ For each CARLA run, verify:
 
 - the log contains `HOLD`, `THREAT`, `AEB`, and `COMPLETE`;
 - the target brakes only after the stable hold;
-- FCW precedes or coincides with AEB;
-- brake stays between 0% and 100%;
-- steering stays bounded by ±0.18;
-- minimum gap remains positive;
+- FCW precedes or coincides with AEB.
+- brake stays between 0% and 100%.
+- steering stays bounded by ±0.18.
+- minimum gap remains positive.
 - PID and MPC are compared at the same config and fixed time step.
