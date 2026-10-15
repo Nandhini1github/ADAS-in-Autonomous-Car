@@ -1,45 +1,30 @@
 #!/usr/bin/env python3
-"""Summarize Town10 PID or MPC result CSV."""
-
+"""Validate and summarize one AEB CSV."""
 import argparse
-import csv
-import math
+import json
 from pathlib import Path
+import sys
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+from town10_adas.metrics import load_csv, summarize_run
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description="Summarize a Town10 PID or MPC result CSV")
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("csv_path", type=Path)
+    parser.add_argument("--stop-speed-mph", type=float, default=1.0)
+    parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
-
-    with args.csv_path.open(newline="", encoding="utf-8") as stream:
-        reader = csv.DictReader(stream)
-        rows = list(reader)
-    if not rows:
-        raise SystemExit("CSV contains no samples")
-    fieldnames = set(reader.fieldnames or ())
-    steer_field = "ego_steer" if "ego_steer" in fieldnames else "steer"
-    if steer_field not in fieldnames:
-        raise SystemExit("CSV must contain either ego_steer or steer")
-
-    phases = sorted({row["phase"] for row in rows})
-    finite_ttc = [float(row["ttc_s"]) for row in rows if row["ttc_s"].lower() != "inf"]
-    minimum_ttc = min(finite_ttc, default=math.inf)
-    aeb_samples = sum(int(row["aeb_active"]) for row in rows)
-    print(f"samples: {len(rows)}")
-    print(f"duration_s: {float(rows[-1]['time_s']):.3f}")
-    print(f"phases: {', '.join(phases)}")
-    print(f"minimum_gap_m: {min(float(row['distance_m']) for row in rows):.3f}")
-    print(f"minimum_ttc_s: {'inf' if math.isinf(minimum_ttc) else f'{minimum_ttc:.3f}'}")
-    print(f"maximum_abs_steer: {max(abs(float(row[steer_field])) for row in rows):.4f}")
-    if "fcw" in fieldnames:
-        print(f"fcw_samples: {sum(int(row['fcw']) for row in rows)}")
+    try:
+        summary = summarize_run(load_csv(args.csv_path), args.stop_speed_mph)
+    except (OSError, ValueError) as exc:
+        parser.exit(2, f"analysis error: {exc}\n")
+    if args.json:
+        print(json.dumps(summary, indent=2, allow_nan=False))
     else:
-        print("fcw_samples: not_logged")
-    print(f"aeb_samples: {aeb_samples}")
-    print(f"brake_samples: {sum(float(row['brake_percent']) > 0.0 for row in rows)}")
-    print(f"aeb_event_exercised: {'yes' if aeb_samples else 'no'}")
-    return 0
+        for key, value in summary.items():
+            print(f"{key}: {'unavailable' if value is None else value}")
+    return 0 if summary["valid_for_comparison"] else 2
 
 
 if __name__ == "__main__":

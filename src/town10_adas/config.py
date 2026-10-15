@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -84,9 +85,43 @@ def load_config(path: str | Path) -> AppConfig:
     with config_path.open("r", encoding="utf-8") as stream:
         raw = json.load(stream)
 
-    return AppConfig(
+    config = AppConfig(
         carla=CarlaConfig(**_section(raw, "carla")),
         scenario=ScenarioConfig(**_section(raw, "scenario")),
         controllers=ControllerConfig(**_section(raw, "controllers")),
         logging=LoggingConfig(**_section(raw, "logging")),
     )
+    validate_config(config)
+    return config
+
+
+def validate_config(config: AppConfig) -> None:
+    """Fail before spawning actors or writing logs for invalid numeric settings."""
+    sections = asdict(config)
+    for section, values in sections.items():
+        for name, value in values.items():
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                if not math.isfinite(value) or value < 0:
+                    raise ValueError(f"{section}.{name} must be finite and nonnegative")
+    positive = {
+        "carla": ("port", "timeout_s", "fixed_delta_seconds"),
+        "scenario": ("ego_speed_mph", "initial_gap_m", "route_minimum_m", "timeout_s", "stop_speed_mph"),
+        "controllers": ("wheelbase_m", "wheel_max_angle_deg", "service_brake_decel_mps2",
+                        "fcw_ttc_s", "aeb_ttc_s", "max_aeb_decel_mps2", "aeb_pid_target_decel_mps2",
+                        "mpc_horizon_s", "mpc_step_s"),
+    }
+    for section, names in positive.items():
+        for name in names:
+            if sections[section][name] <= 0:
+                raise ValueError(f"{section}.{name} must be positive")
+    controls = config.controllers
+    if controls.aeb_ttc_s > controls.fcw_ttc_s:
+        raise ValueError("AEB TTC threshold cannot exceed FCW threshold")
+    if controls.aeb_pid_target_decel_mps2 > controls.max_aeb_decel_mps2:
+        raise ValueError("PID target deceleration cannot exceed maximum deceleration")
+    if not controls.mpc_step_s <= controls.mpc_horizon_s <= 10000 * controls.mpc_step_s:
+        raise ValueError("MPC horizon must contain 1 to 10000 steps")
+    for name, value in (("max_steer", controls.max_steer), ("max_throttle", controls.max_throttle),
+                        ("target_brake", config.scenario.target_brake)):
+        if not 0 < value <= 1:
+            raise ValueError(f"{name} must be in (0, 1]")

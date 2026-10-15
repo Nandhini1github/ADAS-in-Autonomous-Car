@@ -28,7 +28,7 @@ class ScenarioCsvLogger:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._stream = self.path.open("w", newline="", encoding="utf-8")
-        self._writer = csv.DictWriter(self._stream, fieldnames=FIELDNAMES)
+        self._writer = csv.DictWriter(self._stream, fieldnames=FIELDNAMES, lineterminator="\n")
         self._writer.writeheader()
 
     def write(self, **row: Any) -> None:

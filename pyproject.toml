@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "town10-adas"
+version = "0.2.0"
+description = "Reproducible PID/MPC AEB experiments and shared ROS 2 controller core"
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+plots = ["matplotlib>=3.6,<4"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

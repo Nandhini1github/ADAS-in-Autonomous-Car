@@ -1,0 +1,35 @@
+name: Controller and comparison validation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit and regression tests
+        run: python -m unittest discover -s tests -v
+      - name: Reproduce model comparisons
+        run: python scripts/run_model_benchmark.py --output-dir /tmp/adas-model-results --no-plots --allow-stress-failures
+
+  ros2:
+    runs-on: ubuntu-24.04
+    container: ros:jazzy-ros-base
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build standalone ROS packages
+        shell: bash
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          cd ros2_ws
+          colcon build --packages-up-to town10_adas_ros --event-handlers console_direct+
+          source install/setup.bash
+          ROS_DOMAIN_ID=87 python3 tests/smoke_replay.py ../results/model/urban_15_10/pid.csv

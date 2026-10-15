@@ -1,0 +1,20 @@
+name: town10-adas
+services:
+  carla:
+    image: ${CARLA_IMAGE:-carlasim/carla:0.10.0}
+    command: ["bash", "CarlaUnreal.sh", "-RenderOffScreen", "-nosound", "-carla-rpc-port=2000"]
+    ports:
+      - "${CARLA_BIND_ADDRESS:-127.0.0.1}:${CARLA_RPC_PORT:-2000}:2000"
+      - "${CARLA_BIND_ADDRESS:-127.0.0.1}:${CARLA_STREAM_PORT:-2001}:2001"
+    shm_size: "2gb"
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: "no"

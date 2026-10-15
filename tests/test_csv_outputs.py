@@ -39,6 +39,7 @@ class CsvOutputTests(unittest.TestCase):
             with output.open(newline="", encoding="utf-8") as stream:
                 reader = csv.DictReader(stream)
                 rows = list(reader)
+            self.assertNotIn(b"\r\n", output.read_bytes(), "CSV hashes must survive a Windows checkout")
             self.assertEqual(reader.fieldnames, FIELDNAMES)
             self.assertEqual(len(rows), 1)
 

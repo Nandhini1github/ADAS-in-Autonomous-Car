@@ -1,6 +1,6 @@
 {
   "carla": {
-    "host": "host.docker.internal",
+    "host": "127.0.0.1",
     "port": 2000,
     "timeout_s": 10.0,
     "map": "Town10HD_Opt",

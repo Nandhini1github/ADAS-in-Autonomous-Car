@@ -1,56 +1,45 @@
-# System Architecture
+# System architecture
 
-## Direct scenario-control path
+`src/town10_adas` contains controller math, the safety supervisor, orchestration,
+CSV logging, model simulation, and metrics. The math and model do not import ROS
+or CARLA. Both adapters use the same core.
 
-```text
-config/town10_adas.json
-          │
-          ▼
-ScenarioOrchestrator ──► target cruise / hard-brake state
-          │
-          ├──► Pure Pursuit ──────────────► ego steering
-          ├──► Longitudinal PID ──────────► cruise throttle/brake
-          └──► FCW/TTC SafetySupervisor
-                         │
-                         ├──► AEB PID ─┐
-                         └──► AEB MPC ─┴──► ego emergency brake
-                                             │
-                                             ▼
-                                CARLA Python API 0.10.0
-                                             │
-                                             ▼
-                                CARLA Town10HD_Opt actors
+```mermaid
+flowchart TD
+    Config[JSON configuration] --> Core[Shared Python core]
+    Core --> Model[Longitudinal model plant]
+    Core --> CARLA[CARLA adapter]
+    Model --> ModelCSV[results/model: CSV and provenance]
+    CARLA --> CarlaCSV[CARLA CSV and provenance]
+    ModelCSV --> Metrics[Pair validation and metrics]
+    CarlaCSV --> Metrics
+    Metrics --> Reports[Markdown, JSON, plots]
+    ModelCSV --> Replay[ROS replay]
+    CarlaCSV --> Replay
+    Replay --> Shadow[ROS AEB shadow controller]
+    Core --> Shadow
+    Shadow --> Recorder[ROS recorder]
 ```
 
-PID and MPC share the same scenario, lateral controller, trigger logic, units, and
-CSV logger. Only the emergency-brake law changes.
+## Command authority
 
-## Existing ROS 2 / Autoware observation path
+The CARLA adapter commands its own actors. The model runner commands its local
+plant. The ROS shadow controller produces recommendations without commanding
+CARLA or Autoware. The optional Autoware monitor only subscribes to vehicle status.
 
-```text
-CARLA 0.10.0
-      │
-      ▼
-autoware_carla_interface
-      │
-      ▼
-ROS 2 Jazzy topics ──► town10_adas_monitor (read-only)
-      │
-      ▼
-Autoware 1.9.0
-```
+## Fair comparisons
 
-The direct scenario runner does not publish Autoware control commands. Running it
-against an actor already controlled by Autoware would create competing control
-authority and is unsupported. The ROS 2 package deliberately subscribes only to
-vehicle status so this boundary remains explicit. The direct actor uses the
-`scenario_ego` role rather than Autoware's conventional `ego_vehicle` role.
+Model pairs share settings and initial conditions. Source/CSV hashes identify
+inputs. The comparison layer validates time ordering, numbers, event/completion
+status, provenance, and pre-AEB observations. Invalid pairs remain diagnostics.
 
-## Runtime safety boundaries
+CARLA pairs also need matching route/spawn/environment provenance and contact
+observations. Matching metadata cannot eliminate nondeterministic traffic or
+establish physical safety. See the CARLA validation guide.
 
-- The map name must end in `Town10HD_Opt` or the runner exits.
-- A route is built before actor control starts and must exceed the configured length.
-- FCW/AEB logic is independent from PID/MPC selection.
-- AEB is latched for the remainder of an event.
-- Completion depends on an actual stopped ego, never distance to route end.
-- Actor cleanup occurs in `finally`, and original CARLA world settings are restored.
+## ROS packaging
+
+`town10_adas_core` installs the shared Python source without duplicating the
+algorithm. `town10_adas_interfaces` defines typed messages. `town10_adas_ros`
+installs replay/controller/recorder executables and launch files. The optional
+`town10_adas_monitor` remains a separate Autoware-dependent package.

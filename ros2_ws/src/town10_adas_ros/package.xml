@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>town10_adas_ros</name><version>0.2.0</version>
+  <description>Replay, shadow AEB recommendations, and matched recording.</description>
+  <maintainer email="noreply@example.com">ADAS project maintainer</maintainer>
+  <license>Proprietary</license>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>rcl_interfaces</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>launch</exec_depend><exec_depend>launch_ros</exec_depend>
+  <exec_depend>town10_adas_core</exec_depend>
+  <exec_depend>town10_adas_interfaces</exec_depend>
+  <export><build_type>ament_python</build_type></export>
+</package>

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>town10_adas_core</name><version>0.2.0</version>
+  <description>Shared Python ADAS controllers.</description>
+  <maintainer email="noreply@example.com">ADAS project maintainer</maintainer>
+  <license>Proprietary</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+  <exec_depend>python3</exec_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

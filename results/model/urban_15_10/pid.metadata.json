@@ -1,0 +1,69 @@
+{
+  "source": "deterministic_1d_model",
+  "controller": "pid",
+  "shared_settings": {
+    "case": {
+      "name": "urban_15_10",
+      "ego_speed_mph": 15,
+      "target_speed_mph": 10,
+      "initial_gap_m": 80.0,
+      "grip_scale": 1.0,
+      "brake_delay_s": 0.1,
+      "actuator_tau_s": 0.15,
+      "target_max_decel_mps2": 7.0
+    },
+    "dt_s": 0.05,
+    "scenario": {
+      "ego_speed_mph": 15,
+      "target_speed_mph": 10,
+      "initial_gap_m": 80.0,
+      "route_minimum_m": 400.0,
+      "stable_tolerance_mph": 1.0,
+      "stable_hold_s": 3.0,
+      "target_brake": 1.0,
+      "stop_speed_mph": 1.0,
+      "stop_hold_s": 1.0,
+      "timeout_s": 75.0,
+      "retain_actors_s": 5.0
+    },
+    "controllers": {
+      "wheelbase_m": 2.85,
+      "wheel_max_angle_deg": 35.0,
+      "lookahead_base_m": 6.0,
+      "lookahead_gain_s": 0.45,
+      "max_steer": 0.18,
+      "speed_kp": 0.09,
+      "speed_ki": 0.012,
+      "speed_kd": 0.01,
+      "max_throttle": 0.6,
+      "service_brake_decel_mps2": 4.0,
+      "fcw_ttc_s": 3.0,
+      "aeb_ttc_s": 2.0,
+      "aeb_distance_margin_m": 5.0,
+      "max_aeb_decel_mps2": 8.0,
+      "aeb_pid_kp": 0.45,
+      "aeb_pid_ki": 0.07,
+      "aeb_pid_kd": 0.02,
+      "aeb_pid_target_decel_mps2": 6.5,
+      "mpc_horizon_s": 2.5,
+      "mpc_step_s": 0.05
+    },
+    "initialization": "steady_speed",
+    "effective_brake_delay_s": 0.1,
+    "plant_version": 1,
+    "controller_model_knows_grip_or_delay": false
+  },
+  "source_sha256": "c6e6667e165a2d911347476bbfa18e79ab361eee9b34d90c764f66fa0b066dbb",
+  "csv_sha256": "b641a4b1e75e765aeafa4caff824d2e649163d3241ab7e4b88650d09ee99da16",
+  "python_version": "3.12.3",
+  "outcome": "COMPLETE",
+  "overlap_detected": false,
+  "premature_aeb": false,
+  "limitations": [
+    "No CARLA or road validation",
+    "Straight-line ideal sensing",
+    "Steady-speed initialization",
+    "No statistical uncertainty estimate",
+    "Gap <= 0 detects model overlap, not a CARLA contact sensor"
+  ]
+}

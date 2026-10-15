@@ -1,0 +1,265 @@
+{
+  "schema_version": 1,
+  "source": "deterministic_1d_model",
+  "comparison_valid": false,
+  "invalid_reasons": [
+    "pid:aborted_run",
+    "pid:no_stop_after_aeb",
+    "pid:gap_overlap_proxy",
+    "mpc:aborted_run",
+    "mpc:no_stop_after_aeb",
+    "mpc:gap_overlap_proxy"
+  ],
+  "provenance_verified": true,
+  "pre_aeb_traces_match": true,
+  "pre_aeb_absolute_tolerance": 0.001,
+  "provenance": {
+    "pid": {
+      "source": "deterministic_1d_model",
+      "controller": "pid",
+      "shared_settings": {
+        "case": {
+          "name": "reduced_grip_35_20",
+          "ego_speed_mph": 35,
+          "target_speed_mph": 20,
+          "initial_gap_m": 80.0,
+          "grip_scale": 0.55,
+          "brake_delay_s": 0.1,
+          "actuator_tau_s": 0.15,
+          "target_max_decel_mps2": 7.0
+        },
+        "dt_s": 0.05,
+        "scenario": {
+          "ego_speed_mph": 35,
+          "target_speed_mph": 20,
+          "initial_gap_m": 80.0,
+          "route_minimum_m": 400.0,
+          "stable_tolerance_mph": 1.0,
+          "stable_hold_s": 3.0,
+          "target_brake": 1.0,
+          "stop_speed_mph": 1.0,
+          "stop_hold_s": 1.0,
+          "timeout_s": 75.0,
+          "retain_actors_s": 5.0
+        },
+        "controllers": {
+          "wheelbase_m": 2.85,
+          "wheel_max_angle_deg": 35.0,
+          "lookahead_base_m": 6.0,
+          "lookahead_gain_s": 0.45,
+          "max_steer": 0.18,
+          "speed_kp": 0.09,
+          "speed_ki": 0.012,
+          "speed_kd": 0.01,
+          "max_throttle": 0.6,
+          "service_brake_decel_mps2": 4.0,
+          "fcw_ttc_s": 3.0,
+          "aeb_ttc_s": 2.0,
+          "aeb_distance_margin_m": 5.0,
+          "max_aeb_decel_mps2": 8.0,
+          "aeb_pid_kp": 0.45,
+          "aeb_pid_ki": 0.07,
+          "aeb_pid_kd": 0.02,
+          "aeb_pid_target_decel_mps2": 6.5,
+          "mpc_horizon_s": 2.5,
+          "mpc_step_s": 0.05
+        },
+        "initialization": "steady_speed",
+        "effective_brake_delay_s": 0.1,
+        "plant_version": 1,
+        "controller_model_knows_grip_or_delay": false
+      },
+      "source_sha256": "c6e6667e165a2d911347476bbfa18e79ab361eee9b34d90c764f66fa0b066dbb",
+      "csv_sha256": "939220b3362385fd022b9ae797a23b3205a35aeae7886ba2b7d8d4aeda629d94",
+      "python_version": "3.12.3",
+      "outcome": "ABORTED",
+      "overlap_detected": true,
+      "premature_aeb": false,
+      "limitations": [
+        "No CARLA or road validation",
+        "Straight-line ideal sensing",
+        "Steady-speed initialization",
+        "No statistical uncertainty estimate",
+        "Gap <= 0 detects model overlap, not a CARLA contact sensor"
+      ]
+    },
+    "mpc": {
+      "source": "deterministic_1d_model",
+      "controller": "mpc",
+      "shared_settings": {
+        "case": {
+          "name": "reduced_grip_35_20",
+          "ego_speed_mph": 35,
+          "target_speed_mph": 20,
+          "initial_gap_m": 80.0,
+          "grip_scale": 0.55,
+          "brake_delay_s": 0.1,
+          "actuator_tau_s": 0.15,
+          "target_max_decel_mps2": 7.0
+        },
+        "dt_s": 0.05,
+        "scenario": {
+          "ego_speed_mph": 35,
+          "target_speed_mph": 20,
+          "initial_gap_m": 80.0,
+          "route_minimum_m": 400.0,
+          "stable_tolerance_mph": 1.0,
+          "stable_hold_s": 3.0,
+          "target_brake": 1.0,
+          "stop_speed_mph": 1.0,
+          "stop_hold_s": 1.0,
+          "timeout_s": 75.0,
+          "retain_actors_s": 5.0
+        },
+        "controllers": {
+          "wheelbase_m": 2.85,
+          "wheel_max_angle_deg": 35.0,
+          "lookahead_base_m": 6.0,
+          "lookahead_gain_s": 0.45,
+          "max_steer": 0.18,
+          "speed_kp": 0.09,
+          "speed_ki": 0.012,
+          "speed_kd": 0.01,
+          "max_throttle": 0.6,
+          "service_brake_decel_mps2": 4.0,
+          "fcw_ttc_s": 3.0,
+          "aeb_ttc_s": 2.0,
+          "aeb_distance_margin_m": 5.0,
+          "max_aeb_decel_mps2": 8.0,
+          "aeb_pid_kp": 0.45,
+          "aeb_pid_ki": 0.07,
+          "aeb_pid_kd": 0.02,
+          "aeb_pid_target_decel_mps2": 6.5,
+          "mpc_horizon_s": 2.5,
+          "mpc_step_s": 0.05
+        },
+        "initialization": "steady_speed",
+        "effective_brake_delay_s": 0.1,
+        "plant_version": 1,
+        "controller_model_knows_grip_or_delay": false
+      },
+      "source_sha256": "c6e6667e165a2d911347476bbfa18e79ab361eee9b34d90c764f66fa0b066dbb",
+      "csv_sha256": "a181bb4ed43ab28dac79aafba65af3e6dc90d8b9e6053353e2e655d7361e7aeb",
+      "python_version": "3.12.3",
+      "outcome": "ABORTED",
+      "overlap_detected": true,
+      "premature_aeb": false,
+      "limitations": [
+        "No CARLA or road validation",
+        "Straight-line ideal sensing",
+        "Steady-speed initialization",
+        "No statistical uncertainty estimate",
+        "Gap <= 0 detects model overlap, not a CARLA contact sensor"
+      ]
+    }
+  },
+  "runs": {
+    "pid": {
+      "valid_for_comparison": false,
+      "invalid_reasons": [
+        "aborted_run",
+        "no_stop_after_aeb",
+        "gap_overlap_proxy"
+      ],
+      "outcome": "aborted",
+      "sample_count": 175,
+      "duration_s": 8.7,
+      "start_time_s": 0.0,
+      "end_time_s": 8.7,
+      "phases": [
+        "ACCELERATE",
+        "HOLD",
+        "THREAT",
+        "AEB",
+        "ABORTED"
+      ],
+      "final_phase": "ABORTED",
+      "event_times_s": {
+        "first_fcw": 4.9,
+        "first_threat": 3.05,
+        "first_aeb": 5.55,
+        "first_stop_threshold": null
+      },
+      "activation_speed_mph": 35.0,
+      "activation_gap_m": 30.81346605714301,
+      "minimum_gap_m": -0.0034600530426854292,
+      "minimum_finite_ttc_s": 0.0,
+      "finite_ttc_sample_count": 175,
+      "stop_speed_threshold_mph": 1.0,
+      "stop_time_from_aeb_s": null,
+      "stop_distance_from_aeb_m": null,
+      "peak_deceleration_fd_mps2": 4.392121631222362,
+      "peak_absolute_jerk_fd_mps3": 24.94524466950637,
+      "maximum_abs_steer": 0.0,
+      "aeb_sample_count": 64,
+      "fcw_sample_count": 77,
+      "brake_sample_count": 64,
+      "gap_overlap_proxy": true,
+      "collision_sensor_contact": null,
+      "collision_evidence": "gap <= 0 proxy only; no contact sensor in CSV schema",
+      "controller_runtime_ms": null
+    },
+    "mpc": {
+      "valid_for_comparison": false,
+      "invalid_reasons": [
+        "aborted_run",
+        "no_stop_after_aeb",
+        "gap_overlap_proxy"
+      ],
+      "outcome": "aborted",
+      "sample_count": 179,
+      "duration_s": 8.9,
+      "start_time_s": 0.0,
+      "end_time_s": 8.9,
+      "phases": [
+        "ACCELERATE",
+        "HOLD",
+        "THREAT",
+        "AEB",
+        "ABORTED"
+      ],
+      "final_phase": "ABORTED",
+      "event_times_s": {
+        "first_fcw": 4.9,
+        "first_threat": 3.05,
+        "first_aeb": 5.55,
+        "first_stop_threshold": null
+      },
+      "activation_speed_mph": 35.0,
+      "activation_gap_m": 30.81346605714301,
+      "minimum_gap_m": -0.11154018191469739,
+      "minimum_finite_ttc_s": 0.0,
+      "finite_ttc_sample_count": 179,
+      "stop_speed_threshold_mph": 1.0,
+      "stop_time_from_aeb_s": null,
+      "stop_distance_from_aeb_m": null,
+      "peak_deceleration_fd_mps2": 4.399999987343179,
+      "peak_absolute_jerk_fd_mps3": 24.94524466950637,
+      "maximum_abs_steer": 0.0,
+      "aeb_sample_count": 68,
+      "fcw_sample_count": 81,
+      "brake_sample_count": 68,
+      "gap_overlap_proxy": true,
+      "collision_sensor_contact": null,
+      "collision_evidence": "gap <= 0 proxy only; no contact sensor in CSV schema",
+      "controller_runtime_ms": null
+    }
+  },
+  "mpc_minus_pid": {
+    "minimum_gap_m": null,
+    "minimum_finite_ttc_s": null,
+    "stop_time_from_aeb_s": null,
+    "stop_distance_from_aeb_m": null,
+    "peak_deceleration_fd_mps2": null,
+    "peak_absolute_jerk_fd_mps3": null
+  },
+  "interpretation": "No overall winner: gap, response and comfort trade off. Deltas require complete, matched, documented runs.",
+  "limitations": [
+    "Model traces are controller experiments, not CARLA or road validation.",
+    "Gap <= 0 is an overlap proxy; contact requires separate sensor evidence.",
+    "TTC assumes constant relative motion; nonclosing TTC is unavailable.",
+    "Finite differences are unsmoothed and depend on sampling and speed quantization.",
+    "Stop is the first sample at or below the speed threshold, not exact zero; distance uses trapezoids.",
+    "One paired run does not establish statistical significance."
+  ]
+}

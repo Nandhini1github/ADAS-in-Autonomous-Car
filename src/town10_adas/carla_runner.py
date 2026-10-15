@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 import math
 from pathlib import Path
 import time
@@ -13,8 +14,9 @@ from .config import AppConfig, load_config
 from .csv_logger import ScenarioCsvLogger
 from .lateral import Pose2D, PurePursuitController, RoutePoint
 from .longitudinal import ControlDemand, LongitudinalPID
+from .provenance import write_carla_metadata
 from .safety import SafetySupervisor
-from .scenario import ScenarioObservation, ScenarioOrchestrator
+from .scenario import ScenarioObservation, ScenarioOrchestrator, ScenarioPhase
 from .units import mph_to_mps, mps_to_mph
 
 
@@ -79,12 +81,15 @@ def _spawn_vehicle(world: Any, blueprint_id: str, role_name: str, waypoint: Any)
     return actor
 
 
-def _spawn_scenario_actors(world: Any, config: AppConfig) -> tuple[Any, Any, list[Any]]:
-    """Try Town10 spawn points until a long route and two clear poses are found."""
+def _spawn_scenario_actors(world: Any, config: AppConfig, spawn_index: int = 0) -> tuple[Any, Any, list[Any]]:
+    """Use the same explicit spawn index in each comparison; never fall back."""
     spawn_allowance_m = config.scenario.initial_gap_m + 8.0
     required_route_m = config.scenario.route_minimum_m + spawn_allowance_m
     last_error: Exception | None = None
-    for spawn_transform in world.get_map().get_spawn_points():
+    spawn_points = world.get_map().get_spawn_points()
+    if not 0 <= spawn_index < len(spawn_points):
+        raise ValueError(f"spawn_index must be in [0, {len(spawn_points) - 1}]")
+    for spawn_transform in spawn_points[spawn_index:spawn_index + 1]:
         ego = None
         try:
             start_waypoint = world.get_map().get_waypoint(
@@ -111,7 +116,7 @@ def _spawn_scenario_actors(world: Any, config: AppConfig) -> tuple[Any, Any, lis
             if ego is not None and ego.is_alive:
                 ego.destroy()
     raise RuntimeError(
-        "no Town10 spawn point provided both a clear two-vehicle placement "
+        f"spawn index {spawn_index} did not provide a clear two-vehicle placement "
         f"and a {required_route_m:.1f} m route"
     ) from last_error
 
@@ -155,7 +160,15 @@ def _controller_objects(config: AppConfig, controller_name: str) -> tuple[Any, .
     return lateral, LongitudinalPID(**speed_args), LongitudinalPID(**speed_args), supervisor, emergency
 
 
-def run(config: AppConfig, controller_name: str, output_path: Path) -> int:
+def _pose_evidence(actor: Any) -> dict[str, float]:
+    transform = actor.get_transform()
+    return {name: float(getattr(transform.location, name)) for name in ("x", "y", "z")} | {
+        name: float(getattr(transform.rotation, name)) for name in ("pitch", "yaw", "roll")}
+
+
+def run(config: AppConfig, controller_name: str, output_path: Path, spawn_index: int = 0) -> int:
+    if controller_name not in {"pid", "mpc"}:
+        raise ValueError("controller must be pid or mpc")
     try:
         import carla
     except ImportError as exc:
@@ -171,16 +184,44 @@ def run(config: AppConfig, controller_name: str, output_path: Path) -> int:
     original_settings = world.get_settings()
     actors: list[Any] = []
     logger: ScenarioCsvLogger | None = None
+    collision_sensor = None
+    collision_events: list[dict[str, Any]] = []
+    evidence: dict[str, Any] = {
+        "completed": False, "outcome": "not_started", "collision_count": None,
+        "collision_sensor_attached": False, "map": map_name,
+        "versions": {"client": client.get_client_version(), "server": client.get_server_version()},
+    }
     try:
+        logger = ScenarioCsvLogger(output_path)
         if config.carla.synchronous_mode:
             settings = world.get_settings()
             settings.synchronous_mode = True
             settings.fixed_delta_seconds = config.carla.fixed_delta_seconds
             world.apply_settings(settings)
 
-        ego, target, route = _spawn_scenario_actors(world, config)
+        ego, target, route = _spawn_scenario_actors(world, config, spawn_index)
         actors.append(ego)
         actors.append(target)
+        evidence["spawns"] = {"ego": _pose_evidence(ego), "lead": _pose_evidence(target)}
+        evidence["route"] = {
+            "spawn_index": spawn_index,
+            "waypoints": [[p.road_id, p.lane_id, float(p.s),
+                           float(p.transform.location.x), float(p.transform.location.y)] for p in route],
+        }
+        settings = world.get_settings()
+        evidence["world_settings"] = {"synchronous_mode": settings.synchronous_mode,
+                                     "fixed_delta_seconds": settings.fixed_delta_seconds}
+        weather = world.get_weather()
+        evidence["weather"] = {name: float(getattr(weather, name)) for name in (
+            "cloudiness", "precipitation", "precipitation_deposits", "wind_intensity",
+            "sun_azimuth_angle", "sun_altitude_angle", "fog_density", "wetness")}
+        evidence["gap_measurement"] = "Euclidean center distance minus longitudinal half-lengths; curved-road approximation"
+        collision_sensor = world.spawn_actor(
+            world.get_blueprint_library().find("sensor.other.collision"), carla.Transform(), attach_to=ego)
+        actors.append(collision_sensor)
+        collision_sensor.listen(lambda event: collision_events.append({
+            "frame": int(event.frame), "other_actor_type": event.other_actor.type_id}))
+        evidence["collision_sensor_attached"] = True
 
         route_points = [
             RoutePoint(point.transform.location.x, point.transform.location.y)
@@ -198,7 +239,6 @@ def run(config: AppConfig, controller_name: str, output_path: Path) -> int:
             stop_hold_s=config.scenario.stop_hold_s,
             timeout_s=config.scenario.timeout_s,
         )
-        logger = ScenarioCsvLogger(output_path)
         start_simulation_s = world.get_snapshot().timestamp.elapsed_seconds
         dt_s = config.carla.fixed_delta_seconds
         print(f"Town10 AEB | controller={controller_name.upper()} | log={output_path}")
@@ -215,7 +255,7 @@ def run(config: AppConfig, controller_name: str, output_path: Path) -> int:
             ego_speed = _speed_mps(ego)
             target_speed = _speed_mps(target)
             center_distance = ego.get_location().distance(target.get_location())
-            gap_m = max(0.0, center_distance - ego.bounding_box.extent.x - target.bounding_box.extent.x)
+            gap_m = center_distance - ego.bounding_box.extent.x - target.bounding_box.extent.x
             assessment = supervisor.evaluate(ego_speed, target_speed, gap_m)
             phase = scenario.update(
                 ScenarioObservation(
@@ -225,6 +265,12 @@ def run(config: AppConfig, controller_name: str, output_path: Path) -> int:
                     aeb_active=assessment.aeb,
                 )
             )
+            if collision_events or gap_m <= 0:
+                scenario.phase = phase = ScenarioPhase.ABORTED
+                evidence["termination_reason"] = "contact_or_gap_overlap"
+            elif assessment.aeb and phase in {ScenarioPhase.ACCELERATE, ScenarioPhase.HOLD}:
+                scenario.phase = phase = ScenarioPhase.ABORTED
+                evidence["termination_reason"] = "aeb_before_scheduled_threat"
 
             transform = ego.get_transform()
             steer = lateral.compute(
@@ -262,6 +308,8 @@ def run(config: AppConfig, controller_name: str, output_path: Path) -> int:
                 target_speed,
                 route_points,
             )
+            if scenario.finished:
+                ego_demand = target_demand = ControlDemand(throttle=0.0, brake=1.0)
             ego.apply_control(
                 carla.VehicleControl(
                     throttle=ego_demand.throttle,
@@ -292,18 +340,37 @@ def run(config: AppConfig, controller_name: str, output_path: Path) -> int:
             )
 
         print(f"Scenario ended in phase {scenario.phase.value}")
+        evidence["outcome"] = scenario.phase.value
+        evidence["completed"] = scenario.phase == ScenarioPhase.COMPLETE
         if config.scenario.retain_actors_s > 0.0:
             print(f"Retaining actors for {config.scenario.retain_actors_s:.1f} s for visual inspection")
             time.sleep(config.scenario.retain_actors_s)
         return 0 if scenario.phase.value == "COMPLETE" else 2
+    except BaseException as exc:
+        evidence["outcome"] = "exception"
+        evidence["failure"] = f"{type(exc).__name__}: {exc}"
+        raise
     finally:
         if logger is not None:
             logger.close()
-        for actor in reversed(actors):
-            if actor.is_alive:
-                actor.destroy()
-        if config.carla.synchronous_mode:
-            world.apply_settings(original_settings)
+        try:
+            if collision_sensor is not None:
+                collision_sensor.stop()
+        finally:
+            try:
+                for actor in reversed(actors):
+                    if actor.is_alive:
+                        actor.destroy()
+            finally:
+                try:
+                    if config.carla.synchronous_mode:
+                        world.apply_settings(original_settings)
+                finally:
+                    if logger is not None:
+                        evidence["collision_events"] = list(collision_events)
+                        evidence["collision_count"] = (len(collision_events)
+                                                       if evidence["collision_sensor_attached"] else None)
+                        write_carla_metadata(output_path, config, controller_name, evidence)
 
 
 def default_output_path(config: AppConfig, controller_name: str) -> Path:
@@ -315,6 +382,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run the modular Town10 AEB scenario")
     parser.add_argument("--controller", choices=("pid", "mpc", "both"), default="both")
     parser.add_argument("--config", default="config/town10_adas.json")
+    parser.add_argument("--host", help="CARLA address: default is the config's published Docker host port")
+    parser.add_argument("--port", type=int, help="override CARLA RPC port")
+    parser.add_argument("--spawn-index", type=int, default=0,
+                        help="fixed map spawn index shared by both controllers; no automatic fallback")
     parser.add_argument(
         "--output",
         default=None,
@@ -322,17 +393,27 @@ def main() -> int:
     )
     args = parser.parse_args()
     config = load_config(args.config)
+    if args.host is not None:
+        if not args.host.strip():
+            parser.error("--host must not be empty")
+        config = replace(config, carla=replace(config.carla, host=args.host))
+    if args.port is not None:
+        if not 1 <= args.port <= 65535:
+            parser.error("--port must be between 1 and 65535")
+        config = replace(config, carla=replace(config.carla, port=args.port))
     if args.controller == "both":
+        if not config.carla.synchronous_mode:
+            parser.error("paired comparison requires synchronous_mode=true")
         if args.output is not None:
             parser.error("--output cannot be used with --controller both")
         results = [
-            run(config, controller_name, default_output_path(config, controller_name))
+            run(config, controller_name, default_output_path(config, controller_name), args.spawn_index)
             for controller_name in ("pid", "mpc")
         ]
         return max(results)
 
     output = Path(args.output) if args.output else default_output_path(config, args.controller)
-    return run(config, args.controller, output)
+    return run(config, args.controller, output, args.spawn_index)
 
 
 if __name__ == "__main__":
