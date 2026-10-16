@@ -36,10 +36,6 @@
     "loop": "infinite"
   },
   "files": {
-    "README.md": {
-      "sha256": "531b66206ef3aecd89344745a7792540eb51dbec2bcdea14c270c1e5758b961a",
-      "size_bytes": 10862
-    },
     "architecture.drawio": {
       "sha256": "c7c306e9196fec0b2ad62ac0ef237578ec15626d7bd2a7df0c121ecc2074cdb1",
       "size_bytes": 9651
@@ -118,5 +114,10 @@
     "editable_source": "architecture.drawio",
     "rendered_svg": "architecture.svg",
     "exporter": "draw.io Desktop 32.4.1"
+  },
+  "documentation": {
+    "path": "../README.md",
+    "sha256": "bc2b89bef9d1293dfa65fb73647eabab0088fa8eb5d9feb76fdc849aab188f43",
+    "size_bytes": 17271
   }
 }

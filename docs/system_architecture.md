@@ -9,7 +9,7 @@ or CARLA. Both adapters use the same core.
 ![Scenario 1 CARLA control flow](<../AEB scenario 1/architecture.svg>)
 
 [Editable draw.io source](<../AEB scenario 1/architecture.drawio>) ·
-[Scenario 1 configuration, sensors, and recordings](<../AEB scenario 1/README.md>)
+[Scenario 1 configuration, sensors, and recordings](../README.md#scenario-1)
 
 The CARLA adapter reads simulator vehicle positions, velocities, and
 acceleration. The safety supervisor evaluates closing speed, TTC, and stopping
