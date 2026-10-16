@@ -12,7 +12,8 @@ from unittest.mock import MagicMock, patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from town10_adas.config import load_config
-from town10_adas.carla_runner import _spawn_scenario_actors
+from town10_adas.carla_runner import _route_lateral_error, _spawn_scenario_actors, run
+from town10_adas.lateral import RoutePoint
 from town10_adas.provenance import write_carla_metadata
 
 
@@ -102,3 +103,16 @@ class CarlaAdapterTests(unittest.TestCase):
         world.get_map.return_value.get_spawn_points.return_value = [object()]
         with self.assertRaises(ValueError):
             _spawn_scenario_actors(world, load_config(ROOT / "config/town10_adas.json"), -1)
+
+    def test_lane_error_uses_segments_and_clamps_their_endpoints(self):
+        route = [RoutePoint(0.0, 0.0), RoutePoint(10.0, 0.0), RoutePoint(10.0, 10.0)]
+        self.assertAlmostEqual(_route_lateral_error(SimpleNamespace(x=5.0, y=1.0), route), 1.0)
+        self.assertAlmostEqual(_route_lateral_error(SimpleNamespace(x=11.0, y=5.0), route), 1.0)
+        self.assertAlmostEqual(_route_lateral_error(SimpleNamespace(x=-3.0, y=-4.0), route), 5.0)
+
+    def test_video_rerun_cannot_truncate_existing_csv_before_connecting(self):
+        original = self.path.read_bytes()
+        with self.assertRaises(FileExistsError):
+            run(load_config(ROOT / "config/town10_adas.json"), "pid", self.path,
+                video_path=self.path.with_suffix(".mp4"))
+        self.assertEqual(self.path.read_bytes(), original)

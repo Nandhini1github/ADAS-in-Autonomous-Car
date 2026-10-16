@@ -1,0 +1,28 @@
+name: adas-presentation
+services:
+  adas:
+    image: adas-autoware-ros2-jazzy:carla010
+    container_name: adas-autoware-ros2-jazzy
+    build:
+      context: ..
+      dockerfile: docker/adas.Dockerfile
+      args:
+        BASE_IMAGE: do18-ros:mpc-rviz-2026-09-30
+        ADAS_UID: "${ADAS_UID:-1000}"
+        ADAS_GID: "${ADAS_GID:-1000}"
+      additional_contexts:
+        carla_api: ${CARLA_API_DIR:-/home/nandhir/CARLA/Carla-0.10.0-Linux-Shipping/PythonAPI/carla/dist}
+    user: "${ADAS_UID:-1000}:${ADAS_GID:-1000}"
+    init: true
+    working_dir: /workspace/adas
+    environment:
+      ROS_DOMAIN_ID: "${ADAS_ROS_DOMAIN_ID:-42}"
+      MPLCONFIGDIR: /tmp/adas-matplotlib
+    volumes:
+      - ..:/workspace/adas
+    ports:
+      - "127.0.0.1:8765:8765"
+    shm_size: 2gb
+    stdin_open: true
+    tty: true
+    restart: unless-stopped

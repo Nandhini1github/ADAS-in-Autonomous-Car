@@ -1,0 +1,43 @@
+name: adas-presentation
+services:
+  adas:
+    image: adas-autoware-ros2-jazzy:carla010
+    container_name: adas-autoware-ros2-jazzy
+    build:
+      context: ..
+      dockerfile: docker/adas.Dockerfile
+      args:
+        ADAS_UID: "${ADAS_UID:-1000}"
+        ADAS_GID: "${ADAS_GID:-1000}"
+      additional_contexts:
+        carla_api: ${CARLA_API_DIR:-/home/nandhir/CARLA/Carla-0.10.0-Linux-Shipping/PythonAPI/carla/dist}
+    user: "${ADAS_UID:-1000}:${ADAS_GID:-1000}"
+    network_mode: host
+    init: true
+    working_dir: /workspace/adas
+    environment:
+      ROS_DOMAIN_ID: "${ADAS_ROS_DOMAIN_ID:-42}"
+      MPLCONFIGDIR: /tmp/adas-matplotlib
+    volumes:
+      - ..:/workspace/adas
+      - ${AUTOWARE_OVERLAY_DIR:-/home/nandhir/DO18/docker/ros2/autoware}:/workspace/do18-ros/autoware:ro
+    shm_size: 2gb
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+  carla:
+    image: adas-autoware-ros2-jazzy:carla010
+    container_name: adas-carla
+    user: "${ADAS_UID:-1000}:${ADAS_GID:-1000}"
+    network_mode: host
+    init: true
+    working_dir: /opt/carla
+    entrypoint: ["/opt/carla/CarlaUnreal/Binaries/Linux/CarlaUnreal-Linux-Shipping"]
+    command: ["CarlaUnreal", "/Game/Carla/Maps/Town10HD_Opt", "-RenderOffScreen", "-nosound", "-quality-level=Low", "-carla-rpc-port=2020"]
+    devices:
+      - nvidia.com/gpu=all
+    volumes:
+      - ${CARLA_ROOT:-/home/nandhir/CARLA/Carla-0.10.0-Linux-Shipping}:/opt/carla:ro
+      - ../.runtime/carla-saved:/opt/carla/CarlaUnreal/Saved
+    shm_size: 2gb
+    restart: "no"

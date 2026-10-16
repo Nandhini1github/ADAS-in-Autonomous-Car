@@ -1,0 +1,4 @@
+**
+!docker/
+!docker/adas.Dockerfile
+!docker/adas-entrypoint.sh

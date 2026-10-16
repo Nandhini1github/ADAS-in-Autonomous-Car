@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 
 
 def clamp(value: float, low: float, high: float) -> float:
@@ -37,8 +38,13 @@ class LongitudinalPID:
         self.previous_error = 0.0
         self.initialized = False
 
-    def reset(self) -> None:
-        self.integral = 0.0
+    def reset(self, initial_throttle: float = 0.0) -> None:
+        if not math.isfinite(initial_throttle) or not 0 <= initial_throttle <= self.max_throttle:
+            raise ValueError("initial throttle must be within the configured throttle limit")
+        if initial_throttle > 0.0 and self.ki <= 0.0:
+            raise ValueError("initial throttle requires a positive integral gain")
+        self.integral = (clamp(initial_throttle / self.ki, 0.0, self.integral_limit)
+                         if initial_throttle else 0.0)
         self.previous_error = 0.0
         self.initialized = False
 

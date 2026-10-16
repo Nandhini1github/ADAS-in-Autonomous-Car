@@ -6,8 +6,8 @@
     "map": "Town10HD_Opt",
     "fixed_delta_seconds": 0.05,
     "synchronous_mode": true,
-    "ego_blueprint": "vehicle.lincoln.mkz_2020",
-    "target_blueprint": "vehicle.dodge.charger_2020"
+    "ego_blueprint": "vehicle.lincoln.mkz",
+    "target_blueprint": "vehicle.dodge.charger"
   },
   "scenario": {
     "ego_speed_mph": 15.0,

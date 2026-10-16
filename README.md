@@ -3,22 +3,126 @@
 Reproducible **PID versus MPC automatic emergency braking (AEB)** experiments, a
 shared safety supervisor, a CARLA adapter, and ROS 2 Jazzy nodes.
 
+## Scenario 1: 60 mph lead vehicle sudden braking
+
+**[Open Scenario 1 GIFs, videos, CSVs, and sensor details](<AEB scenario 1/README.md>)**
+
+Both vehicles cruise at 60 mph (96.6 km/h), then the lead vehicle applies full
+braking. The reviewed CARLA PID/MPC pair completed with zero recorded contacts:
+minimum gap **9.272 m for PID** and **15.133 m for MPC**. The scenario guide
+documents the rolling start, actual event speeds, controller tradeoffs, and
+reproduction commands.
+
+The RGB camera records the presentation and the collision sensor records
+contact. Braking uses CARLA ground-truth vehicle state. ROS 2 Jazzy and Autoware
+are available in the container; this experiment runs the repository's Python
+controllers directly through CARLA, without an Autoware perception pipeline.
+
 **Target system: Windows → WSL2 → Ubuntu 24.04 + ROS 2 Jazzy + Autoware,
 with CARLA running in Docker.** Start with the
 [WSL2 / Autoware / Docker setup guide](docs/wsl2_autoware.md).
 
-## Comparative results
+## Docker Desktop presentation
+
+`adas-autoware-ros2-jazzy` runs in Docker Desktop (`desktop-linux` context), under
+the **adas-presentation** group. Its image extends the existing
+`do18-ros:mpc-rviz-2026-09-30` image with an isolated CARLA Python environment.
+ROS 2 Jazzy, Autoware, FFmpeg, and plotting libraries are available. The project
+is mounted at `/workspace/adas`, so generated files persist in this checkout.
+
+The GPU simulator runs as `adas-carla` in the host Docker engine (`default`
+context), using NVIDIA CDI and the locally installed CARLA 0.10.0 assets.
+The Desktop container reaches it at `host.docker.internal:2020`.
+
+These Docker files reproduce the local Linux presentation setup. They require
+the existing local base images (`do18-ros:mpc-rviz-2026-09-30` in Docker Desktop
+and `d018-ros:jazzy-autoware` in the host engine), CARLA 0.10.0 Linux assets and
+its Python 3.12 wheel, and an NVIDIA GPU configured for CDI on the host engine.
+The base images provide Python 3.12, ROS 2 Jazzy, Autoware, NumPy, Matplotlib,
+Pillow, and FFmpeg. They are not downloaded or included in this repository.
+Set `CARLA_ROOT`, `CARLA_API_DIR`, and `AUTOWARE_OVERLAY_DIR` to your installation
+paths when using a different machine; the compose defaults describe this run's
+local installation.
+
+```bash
+bash scripts/docker_presentation.sh simulator
+bash scripts/docker_presentation.sh start
+bash scripts/docker_presentation.sh preview
+```
+
+Open **http://localhost:8765**, click **Start comparison**, and watch the live
+camera and telemetry. When both runs finish, review their videos side by side
+and the comparison graphs. Click **Save results** only when you want to keep
+them. The preview stages new recordings under `.runtime/`; saving copies the
+reviewed outputs into a new `results/presentation_...` directory. Starting a
+preview never automatically publishes its recordings into `results/`.
+
+### 60 mph sudden-braking presentation
+
+Use the high-speed configuration with spawn 105:
+
+```bash
+bash scripts/docker_presentation.sh preview \
+  --config "AEB scenario 1/config.json" --spawn-index 105
+```
+
+Both vehicles start at 60 mph (96.6 km/h) and must remain within 1 mph of that
+speed for 1.5 seconds before the lead vehicle applies full braking. The nominal
+initial gap is 55 m; the CSV records the actual measured bumper gap. This uses a
+rolling start: velocity is initialized once, then CARLA vehicle physics and the
+controllers determine motion. The Lincoln's cruise gear is held at 5 and the
+Charger's at 6, with separately initialized cruise throttle. PID and MPC runs
+use the same scenario, cruise settings, and safety supervisor.
+
+The videos include speed, gap, braking, and AEB overlays. An RGB camera supplies
+the recordings, and a collision sensor records contacts. AEB uses CARLA's
+ground-truth positions, speeds, and acceleration; radar, LiDAR, and camera
+object detection are not part of this experiment. These runs compare controller
+behavior with ideal vehicle-state information and do not validate perception
+or real-world safety. Stopping time and distance use a 1 mph stop threshold.
+
+To reopen an existing temporary comparison without running again, add
+`--review-stage .runtime/<run-directory>` with its matching configuration.
+Review the videos and graphs before clicking **Save results**.
+
+Use `bash scripts/docker_presentation.sh shell` to enter the ROS/Autoware shell.
+For unattended recording directly into a final output directory, use a new
+directory for each experiment:
+
+```bash
+bash scripts/docker_presentation.sh exec python scripts/run_town10_adas.py \
+  --host host.docker.internal --port 2020 --controller both --spawn-index 105 \
+  --reload-world --video --output-dir results/presentation_run_01
+bash scripts/docker_presentation.sh exec python scripts/compare_aeb_results.py \
+  --pid results/presentation_run_01/town10_aeb_pid.csv \
+  --mpc results/presentation_run_01/town10_aeb_mpc.csv \
+  --output-dir results/presentation_run_01/comparison
+```
+
+Each controller produces a time-series CSV, a metadata JSON, and a chase-camera
+MP4 at simulation speed. The comparison produces graphs, a report, and
+`summary.csv` with one metrics row per controller. Check its validity fields
+before interpreting differences. Video frame zero corresponds to the first CSV
+sample, and successive frames correspond to successive rows.
+
+`status` shows the Desktop container, `stop` stops it, and `simulator-stop` stops
+the GPU simulator. `CARLA_ROOT`, `CARLA_API_DIR`, and `AUTOWARE_OVERLAY_DIR` can
+override local installation paths. Both compose files record the setup in
+`docker/`. Existing CSVs are not inputs to the live simulator.
+
+## Additional model comparisons
 
 **[View the six-case comparison, raw data, and plots →](results/model/README.md)**
 
 | Evidence | Status |
 |---|---|
 | Deterministic 1-D model | Six paired scenarios: 15/10, 25/15, 35/20, 50/25 mph, reduced grip, delayed braking |
-| CARLA Town10 | Runner with provenance and contact checks; canonical CSVs remain empty placeholders |
+| CARLA Town10 | [Scenario 1](<AEB scenario 1/README.md>): reviewed 60/60 mph paired run with videos, fresh CSVs, provenance, and contact checks |
 | ROS 2 | Typed telemetry, PID/MPC shadow controller, recorder, replay launch, optional Autoware monitor |
 
-The checked-in results are outputs of the disclosed **1-D model**, not CARLA or
-road measurements. Reports compare stopping time/distance, minimum gap/TTC, peak
+The results under `results/model/` are outputs of the disclosed **1-D model**.
+Scenario 1 contains separately recorded CARLA outputs. Reports compare
+stopping time/distance, minimum gap/TTC, peak
 deceleration, and jerk. They check matched pre-AEB inputs and retain invalid runs
 as failures. The six cases are a parameter sweep, not statistical repetitions.
 

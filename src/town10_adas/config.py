@@ -34,6 +34,11 @@ class ScenarioConfig:
     stop_hold_s: float
     timeout_s: float
     retain_actors_s: float
+    start_at_cruise_speed: bool = False
+    rolling_ego_gear: int = 0
+    rolling_target_gear: int = 0
+    rolling_ego_throttle: float = 0.0
+    rolling_target_throttle: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -98,6 +103,8 @@ def load_config(path: str | Path) -> AppConfig:
 def validate_config(config: AppConfig) -> None:
     """Fail before spawning actors or writing logs for invalid numeric settings."""
     sections = asdict(config)
+    if not isinstance(config.scenario.start_at_cruise_speed, bool):
+        raise ValueError("scenario.start_at_cruise_speed must be boolean")
     for section, values in sections.items():
         for name, value in values.items():
             if isinstance(value, (int, float)) and not isinstance(value, bool):
@@ -115,6 +122,15 @@ def validate_config(config: AppConfig) -> None:
             if sections[section][name] <= 0:
                 raise ValueError(f"{section}.{name} must be positive")
     controls = config.controllers
+    for name in ("rolling_ego_gear", "rolling_target_gear"):
+        if type(getattr(config.scenario, name)) is not int:
+            raise ValueError(f"scenario.{name} must be a nonnegative integer")
+    for name in ("rolling_ego_throttle", "rolling_target_throttle"):
+        value = getattr(config.scenario, name)
+        if not 0 <= value <= controls.max_throttle:
+            raise ValueError(f"scenario.{name} must be within the configured throttle limit")
+        if config.scenario.start_at_cruise_speed and value > 0 and controls.speed_ki <= 0:
+            raise ValueError("rolling throttle initialization requires positive speed_ki")
     if controls.aeb_ttc_s > controls.fcw_ttc_s:
         raise ValueError("AEB TTC threshold cannot exceed FCW threshold")
     if controls.aeb_pid_target_decel_mps2 > controls.max_aeb_decel_mps2:

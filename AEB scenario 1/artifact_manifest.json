@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "scenario": "Scenario 1: 60 mph lead vehicle sudden braking",
+  "artifact_path_base": "this directory",
+  "recorded_at_utc": {
+    "pid": "2026-10-16T20:33:30.235340+00:00",
+    "mpc": "2026-10-16T20:33:47.177032+00:00"
+  },
+  "original_saved_directory": "presentation_20261016T203454_122284Z_11321b",
+  "original_staging_directory": "preview_20261016T203313_498745Z_dc9ed8",
+  "raw_recordings_and_metadata_preserved": true,
+  "comparison_reports_regenerated_for_archive": true,
+  "summary_csv_paths_relative_to": "comparison/",
+  "source_sha256": "37c0c8f46b6d6057f014f74ef038df84fe67befb795d55b564dd9e97ac47c067",
+  "source_file_sha256": {
+    "__init__.py": "e5c87dcf110dec26f3eb76bdab27fc34dc1246dbacd820a79cd1c5db60325554",
+    "aeb.py": "f87858c22bfbf838557d5fad073889de1a6a48bcee5e5f1a0fee8214124e185b",
+    "benchmark.py": "c442770b951eb614316b434d0831cfe0e602a94bf3eb1890ff6b50aec0473665",
+    "carla_runner.py": "7f7aada1dfbb277db77abeb615b1b901d0f480244c3833bc1af977e8551e4269",
+    "config.py": "fe794b545f74209fce1b78874700458f6aaa9d11aeaffa9c54ac7759652f28b7",
+    "csv_logger.py": "d6ee543f868ab296346341a5b4a663920aee9283d1b799d1af727f05e0863dae",
+    "lateral.py": "a33c398fcf2a2cd67e5eff0dae1e440b496462bfa984579c3ea350151a92bbcc",
+    "longitudinal.py": "4e3f41e0b76404e677b7bc37ad5bffcbab6a74befa17ee8732c0092bbbd42850",
+    "metrics.py": "78eabdb275af069943f17f3bd3c6095e330ad38733f4fea05bc7e61912970fe2",
+    "provenance.py": "0418c4c34b2f5ac2b392ff526861e0f0da24db5e29833716e201dca9f1a30017",
+    "safety.py": "026474742816b8c26d9cd223e6028d0e6fd20c3a38836f9dc16b78a0166c18c5",
+    "scenario.py": "58c3c534f944acde9053ec1779d880104e0d585b14cd761977ac8eb1c219a0d0",
+    "units.py": "749ad988c650df08cbf4bea4a293c560241671ea1851b7bc61cfa5e2a8f8bc59",
+    "video.py": "0a3a3e7f482a711b3ec4c71022c6b7c0572be4af161e31b30f993ade796ee123"
+  },
+  "gif_preview": {
+    "source": "corresponding original MP4",
+    "width": 640,
+    "height": 360,
+    "fps": 10,
+    "max_colors": 64,
+    "loop": "infinite"
+  },
+  "files": {
+    "README.md": {
+      "sha256": "06c6752a2e26f30763819e709c8c2f6b9764bf4910ba4459a27564f501d31558",
+      "size_bytes": 10639
+    },
+    "comparison/comparison.json": {
+      "sha256": "b3ade2eb5258f236979c04959036c882b5438af72dab20626921bb69f451e2ac",
+      "size_bytes": 170699
+    },
+    "comparison/comparison.md": {
+      "sha256": "ff0bb7c456f0ed649ff741147da26d8e904102231d67ad99e41394e1e8649227",
+      "size_bytes": 1923
+    },
+    "comparison/comparison.png": {
+      "sha256": "27fc78bcddee585d4f1db4c23441e99d9adc003a77c37bb783ac7174b8d4f2ea",
+      "size_bytes": 253044
+    },
+    "comparison/comparison.svg": {
+      "sha256": "7b1a04baa6896f4782d688a47d3e64293dde4a521db90fbaec35382c53bf6f92",
+      "size_bytes": 104836
+    },
+    "comparison/summary.csv": {
+      "sha256": "a62dcb5af27164169db0de58fa33ba92b92534c358c168b4fc9f7358533c29ed",
+      "size_bytes": 1378
+    },
+    "config.json": {
+      "sha256": "035a117427227d68f452a08e9b539253ff8eb0a0aa5992fc0164cb46733cff2d",
+      "size_bytes": 1395
+    },
+    "preview.log": {
+      "sha256": "106f30e0a05942d570eafdae87201b7bf7e8337f2cc97d964ba6dae1150f7d1c",
+      "size_bytes": 228
+    },
+    "preview_config.json": {
+      "sha256": "2248a83e51e6460a1f8ebd94e94e8030dc8468b5d21090ef9d44d744a1f5809c",
+      "size_bytes": 1430
+    },
+    "town10_aeb_mpc.csv": {
+      "sha256": "689126db5ed09f4f34288e3e016cabaa71e9f04bdc40929121e4806328f25e00",
+      "size_bytes": 12733
+    },
+    "town10_aeb_mpc.gif": {
+      "sha256": "920f985ed1f2cdb4145410d8b1fafb277811f01f883cf9c011f8cfecfa696919",
+      "size_bytes": 9216382
+    },
+    "town10_aeb_mpc.metadata.json": {
+      "sha256": "aa44e9e6e88f7be25d63991e362b9f07909a5e174964fd080daf536ff5a873a0",
+      "size_bytes": 69414
+    },
+    "town10_aeb_mpc.mp4": {
+      "sha256": "cd6f1e45338b2affd6f32e2bdd3bd089638a929db232d1a893d538e673764daf",
+      "size_bytes": 8923327
+    },
+    "town10_aeb_pid.csv": {
+      "sha256": "e0fae92b4b8c61e0b8a1247cc229d86cecf34a46c6160b41ecd2a3fe6ae9ba2b",
+      "size_bytes": 12202
+    },
+    "town10_aeb_pid.gif": {
+      "sha256": "490fdce6157afecac25476438427c2059278f72b3384074f2c4c0c83339eebcb",
+      "size_bytes": 8926871
+    },
+    "town10_aeb_pid.metadata.json": {
+      "sha256": "08b3befaabdb16b464e8cab290bb0ea3e0b464d320a668654baf6e85c92d414d",
+      "size_bytes": 69414
+    },
+    "town10_aeb_pid.mp4": {
+      "sha256": "956b7467db46402134844b42a15df7e182ac28df0427795ce713b5773f0b65bc",
+      "size_bytes": 8877670
+    }
+  }
+}

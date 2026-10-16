@@ -31,7 +31,8 @@ def write_carla_metadata(output_path, config, controller, evidence):
     hashes = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(package.glob("*.py"))}
     source_hash = hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest()
     settings = {"config": asdict(config), **{key: evidence.get(key) for key in
-                ("route", "spawns", "map", "versions", "world_settings", "weather")}}
+                ("route", "spawns", "map", "versions", "world_settings", "weather",
+                 "world_reloaded", "settle_ticks")}}
     metadata = {
         "schema_version": 1, "source": "carla", "controller": controller,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),

@@ -230,7 +230,9 @@ def compare_runs(pid_rows, mpc_rows, stop_speed_mph=1.0, provenance=None,
         "provenance": dict(metadata), "runs": runs, "mpc_minus_pid": deltas,
         "interpretation": "No overall winner: gap, response and comfort trade off. Deltas require complete, matched, documented runs.",
         "limitations": [
-            "Model traces are controller experiments, not CARLA or road validation.",
+            ("CARLA traces use simulator ground-truth vehicle state; they do not validate sensor perception or road safety."
+             if source == "carla" else
+             "Model traces are controller experiments, not CARLA or road validation."),
             "Gap <= 0 is an overlap proxy; contact requires separate sensor evidence.",
             "TTC assumes constant relative motion; nonclosing TTC is unavailable.",
             "Finite differences are unsmoothed and depend on sampling and speed quantization.",

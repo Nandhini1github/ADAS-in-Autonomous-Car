@@ -7,7 +7,7 @@ from dataclasses import replace
 import math
 from pathlib import Path
 import time
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 
 from .aeb import AEBMPC, AEBPID
 from .config import AppConfig, load_config
@@ -166,9 +166,33 @@ def _pose_evidence(actor: Any) -> dict[str, float]:
         name: float(getattr(transform.rotation, name)) for name in ("pitch", "yaw", "roll")}
 
 
-def run(config: AppConfig, controller_name: str, output_path: Path, spawn_index: int = 0) -> int:
+def _route_lateral_error(location: Any, route: Sequence[RoutePoint]) -> float:
+    """Distance to the intended route polyline, independent of adjacent road lanes."""
+    minimum = math.inf
+    for first, second in zip(route, route[1:]):
+        dx, dy = second.x_m - first.x_m, second.y_m - first.y_m
+        length_sq = dx * dx + dy * dy
+        if length_sq == 0:
+            continue
+        fraction = max(0.0, min(1.0, ((location.x - first.x_m) * dx
+                                     + (location.y - first.y_m) * dy) / length_sq))
+        minimum = min(minimum, math.hypot(location.x - first.x_m - fraction * dx,
+                                        location.y - first.y_m - fraction * dy))
+    return minimum
+
+
+def run(config: AppConfig, controller_name: str, output_path: Path, spawn_index: int = 0,
+        *, video_path: Path | None = None, reload_world: bool = False,
+        preview_callback: Callable[[Any, dict[str, Any]], None] | None = None,
+        video_overlay: bool = False) -> int:
     if controller_name not in {"pid", "mpc"}:
         raise ValueError("controller must be pid or mpc")
+    if preview_callback is not None and video_path is None:
+        raise ValueError("live preview requires video capture")
+    if video_path is not None:
+        for destination in (output_path, output_path.with_suffix(".metadata.json"), video_path):
+            if destination.exists():
+                raise FileExistsError(f"output already exists; choose a fresh output directory: {destination}")
     try:
         import carla
     except ImportError as exc:
@@ -184,6 +208,7 @@ def run(config: AppConfig, controller_name: str, output_path: Path, spawn_index:
     original_settings = world.get_settings()
     actors: list[Any] = []
     logger: ScenarioCsvLogger | None = None
+    video = None
     collision_sensor = None
     collision_events: list[dict[str, Any]] = []
     evidence: dict[str, Any] = {
@@ -198,6 +223,10 @@ def run(config: AppConfig, controller_name: str, output_path: Path, spawn_index:
             settings.synchronous_mode = True
             settings.fixed_delta_seconds = config.carla.fixed_delta_seconds
             world.apply_settings(settings)
+        if reload_world:
+            world = client.reload_world(reset_settings=False)
+
+        evidence["world_reloaded"] = reload_world
 
         ego, target, route = _spawn_scenario_actors(world, config, spawn_index)
         actors.append(ego)
@@ -222,6 +251,49 @@ def run(config: AppConfig, controller_name: str, output_path: Path, spawn_index:
         collision_sensor.listen(lambda event: collision_events.append({
             "frame": int(event.frame), "other_actor_type": event.other_actor.type_id}))
         evidence["collision_sensor_attached"] = True
+        if video_path is not None:
+            from .video import CarlaVideoRecorder
+            video = CarlaVideoRecorder(world, ego, video_path,
+                                       fixed_delta_seconds=config.carla.fixed_delta_seconds)
+
+        # Let the spawned vehicles settle onto the road before recording observations.
+        for actor in (ego, target):
+            actor.apply_control(carla.VehicleControl(brake=1.0, hand_brake=True))
+        for _ in range(20):
+            if config.carla.synchronous_mode:
+                world.tick()
+            else:
+                world.wait_for_tick()
+        for actor in (ego, target):
+            actor.apply_control(carla.VehicleControl(brake=1.0, hand_brake=False))
+        evidence["settle_ticks"] = 20
+        if config.scenario.start_at_cruise_speed:
+            for actor, speed_mph, gear, throttle in (
+                (ego, config.scenario.ego_speed_mph, config.scenario.rolling_ego_gear,
+                 config.scenario.rolling_ego_throttle),
+                (target, config.scenario.target_speed_mph, config.scenario.rolling_target_gear,
+                 config.scenario.rolling_target_throttle),
+            ):
+                actor.apply_control(carla.VehicleControl(throttle=throttle, brake=0.0,
+                                                        manual_gear_shift=gear > 0, gear=gear))
+                forward = actor.get_transform().get_forward_vector()
+                speed = mph_to_mps(speed_mph)
+                actor.set_target_velocity(carla.Vector3D(x=forward.x * speed,
+                                                        y=forward.y * speed,
+                                                        z=forward.z * speed))
+            # Exclude the one-time velocity initialization from acceleration measurements.
+            if config.carla.synchronous_mode:
+                world.tick()
+            else:
+                world.wait_for_tick()
+        evidence["initialization"] = {
+            "mode": "rolling_start" if config.scenario.start_at_cruise_speed else "from_rest",
+            "warmup_ticks": 1 if config.scenario.start_at_cruise_speed else 0,
+            "description": ("Velocity set once after settling; subsequent motion uses CARLA physics and controllers"
+                            if config.scenario.start_at_cruise_speed else "Vehicles accelerate from rest"),
+        }
+        evidence["lane_tracking"] = {"max_ego_error_m": 0.0, "max_target_error_m": 0.0,
+                                     "abort_error_m": 1.5}
 
         route_points = [
             RoutePoint(point.transform.location.x, point.transform.location.y)
@@ -230,6 +302,10 @@ def run(config: AppConfig, controller_name: str, output_path: Path, spawn_index:
         lateral, ego_speed_pid, target_speed_pid, supervisor, emergency = _controller_objects(
             config, controller_name
         )
+        rolling = config.scenario.start_at_cruise_speed
+        if rolling:
+            ego_speed_pid.reset(initial_throttle=config.scenario.rolling_ego_throttle)
+            target_speed_pid.reset(initial_throttle=config.scenario.rolling_target_throttle)
         scenario = ScenarioOrchestrator(
             ego_target_mph=config.scenario.ego_speed_mph,
             target_target_mph=config.scenario.target_speed_mph,
@@ -254,9 +330,15 @@ def run(config: AppConfig, controller_name: str, output_path: Path, spawn_index:
             elapsed_s = snapshot.timestamp.elapsed_seconds - start_simulation_s
             ego_speed = _speed_mps(ego)
             target_speed = _speed_mps(target)
+            ego_lane_error = _route_lateral_error(ego.get_location(), route_points)
+            target_lane_error = _route_lateral_error(target.get_location(), route_points)
+            for key, error in (("max_ego_error_m", ego_lane_error),
+                               ("max_target_error_m", target_lane_error)):
+                evidence["lane_tracking"][key] = max(evidence["lane_tracking"][key], error)
             center_distance = ego.get_location().distance(target.get_location())
             gap_m = center_distance - ego.bounding_box.extent.x - target.bounding_box.extent.x
             assessment = supervisor.evaluate(ego_speed, target_speed, gap_m)
+            lead_braking_before_tick = scenario.target_hard_brake
             phase = scenario.update(
                 ScenarioObservation(
                     elapsed_s=elapsed_s,
@@ -268,7 +350,10 @@ def run(config: AppConfig, controller_name: str, output_path: Path, spawn_index:
             if collision_events or gap_m <= 0:
                 scenario.phase = phase = ScenarioPhase.ABORTED
                 evidence["termination_reason"] = "contact_or_gap_overlap"
-            elif assessment.aeb and phase in {ScenarioPhase.ACCELERATE, ScenarioPhase.HOLD}:
+            elif max(ego_lane_error, target_lane_error) > evidence["lane_tracking"]["abort_error_m"]:
+                scenario.phase = phase = ScenarioPhase.ABORTED
+                evidence["termination_reason"] = "left_intended_route"
+            elif assessment.aeb and not lead_braking_before_tick:
                 scenario.phase = phase = ScenarioPhase.ABORTED
                 evidence["termination_reason"] = "aeb_before_scheduled_threat"
 
@@ -293,6 +378,12 @@ def run(config: AppConfig, controller_name: str, output_path: Path, spawn_index:
 
             if scenario.target_hard_brake:
                 target_demand = ControlDemand(throttle=0.0, brake=config.scenario.target_brake)
+                if "lead_brake_event" not in evidence:
+                    evidence["lead_brake_event"] = {
+                        "time_s": elapsed_s, "ego_speed_mph": mps_to_mph(ego_speed),
+                        "target_speed_mph": mps_to_mph(target_speed), "gap_m": gap_m,
+                        "brake_percent": 100.0 * config.scenario.target_brake,
+                    }
             else:
                 target_demand = target_speed_pid.compute(
                     mph_to_mps(config.scenario.target_speed_mph), target_speed, dt_s
@@ -315,6 +406,8 @@ def run(config: AppConfig, controller_name: str, output_path: Path, spawn_index:
                     throttle=ego_demand.throttle,
                     brake=ego_demand.brake,
                     steer=steer,
+                    manual_gear_shift=rolling and config.scenario.rolling_ego_gear > 0,
+                    gear=config.scenario.rolling_ego_gear if rolling else 0,
                 )
             )
             target.apply_control(
@@ -322,9 +415,11 @@ def run(config: AppConfig, controller_name: str, output_path: Path, spawn_index:
                     throttle=target_demand.throttle,
                     brake=target_demand.brake,
                     steer=target_steer,
+                    manual_gear_shift=rolling and config.scenario.rolling_target_gear > 0,
+                    gear=config.scenario.rolling_target_gear if rolling else 0,
                 )
             )
-            logger.write(
+            sample = dict(
                 time_s=f"{elapsed_s:.3f}",
                 phase=phase.value,
                 ego_speed_mph=f"{mps_to_mph(ego_speed):.3f}",
@@ -338,6 +433,17 @@ def run(config: AppConfig, controller_name: str, output_path: Path, spawn_index:
                 ego_steer=f"{steer:.4f}",
                 ego_accel_mps2=f"{_acceleration_mps2(ego):.4f}",
             )
+            logger.write(**sample)
+            if video is not None:
+                preview_sample = sample | {
+                    "target_brake_percent": f"{100.0 * target_demand.brake:.2f}",
+                    "target_accel_mps2": f"{_acceleration_mps2(target):.4f}",
+                    "lane_error_m": f"{ego_lane_error:.3f}",
+                }
+                image = video.capture(snapshot.frame, telemetry=preview_sample if video_overlay else None,
+                                      controller=controller_name)
+                if preview_callback is not None:
+                    preview_callback(image, preview_sample)
 
         print(f"Scenario ended in phase {scenario.phase.value}")
         evidence["outcome"] = scenario.phase.value
@@ -354,23 +460,42 @@ def run(config: AppConfig, controller_name: str, output_path: Path, spawn_index:
         if logger is not None:
             logger.close()
         try:
-            if collision_sensor is not None:
-                collision_sensor.stop()
+            if video is not None:
+                try:
+                    video.close()
+                except Exception as exc:
+                    evidence["completed"] = False
+                    evidence["video_failure"] = f"{type(exc).__name__}: {exc}"
+                    raise
+                finally:
+                    evidence["video"] = video.metadata
+        finally:
+            _cleanup_run(world, original_settings, config, actors, collision_sensor,
+                         collision_events, logger, output_path, controller_name, evidence)
+
+
+def _cleanup_run(world: Any, original_settings: Any, config: AppConfig, actors: list[Any],
+                 collision_sensor: Any, collision_events: list[dict[str, Any]],
+                 logger: ScenarioCsvLogger | None, output_path: Path,
+                 controller_name: str, evidence: dict[str, Any]) -> None:
+    try:
+        if collision_sensor is not None:
+            collision_sensor.stop()
+    finally:
+        try:
+            for actor in reversed(actors):
+                if actor.is_alive:
+                    actor.destroy()
         finally:
             try:
-                for actor in reversed(actors):
-                    if actor.is_alive:
-                        actor.destroy()
+                if config.carla.synchronous_mode:
+                    world.apply_settings(original_settings)
             finally:
-                try:
-                    if config.carla.synchronous_mode:
-                        world.apply_settings(original_settings)
-                finally:
-                    if logger is not None:
-                        evidence["collision_events"] = list(collision_events)
-                        evidence["collision_count"] = (len(collision_events)
-                                                       if evidence["collision_sensor_attached"] else None)
-                        write_carla_metadata(output_path, config, controller_name, evidence)
+                if logger is not None:
+                    evidence["collision_events"] = list(collision_events)
+                    evidence["collision_count"] = (len(collision_events)
+                                                   if evidence["collision_sensor_attached"] else None)
+                    write_carla_metadata(output_path, config, controller_name, evidence)
 
 
 def default_output_path(config: AppConfig, controller_name: str) -> Path:
@@ -386,6 +511,10 @@ def main() -> int:
     parser.add_argument("--port", type=int, help="override CARLA RPC port")
     parser.add_argument("--spawn-index", type=int, default=0,
                         help="fixed map spawn index shared by both controllers; no automatic fallback")
+    parser.add_argument("--output-dir", help="directory for fresh run CSV, metadata, and video files")
+    parser.add_argument("--video", action="store_true", help="record a synchronized RGB chase-camera MP4")
+    parser.add_argument("--reload-world", action="store_true",
+                        help="reset the isolated CARLA world before each controller run")
     parser.add_argument(
         "--output",
         default=None,
@@ -393,6 +522,10 @@ def main() -> int:
     )
     args = parser.parse_args()
     config = load_config(args.config)
+    if args.output_dir:
+        config = replace(config, logging=replace(config.logging, output_directory=args.output_dir))
+    if args.video and not config.carla.synchronous_mode:
+        parser.error("video recording requires synchronous_mode=true")
     if args.host is not None:
         if not args.host.strip():
             parser.error("--host must not be empty")
@@ -407,13 +540,17 @@ def main() -> int:
         if args.output is not None:
             parser.error("--output cannot be used with --controller both")
         results = [
-            run(config, controller_name, default_output_path(config, controller_name), args.spawn_index)
+            run(config, controller_name, default_output_path(config, controller_name), args.spawn_index,
+                video_path=default_output_path(config, controller_name).with_suffix(".mp4") if args.video else None,
+                reload_world=args.reload_world)
             for controller_name in ("pid", "mpc")
         ]
         return max(results)
 
     output = Path(args.output) if args.output else default_output_path(config, args.controller)
-    return run(config, args.controller, output, args.spawn_index)
+    return run(config, args.controller, output, args.spawn_index,
+               video_path=output.with_suffix(".mp4") if args.video else None,
+               reload_world=args.reload_world)
 
 
 if __name__ == "__main__":
