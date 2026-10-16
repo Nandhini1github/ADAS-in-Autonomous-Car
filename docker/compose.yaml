@@ -1,4 +1,4 @@
-name: adas-presentation
+name: adas
 services:
   adas:
     image: adas-autoware-ros2-jazzy:carla010

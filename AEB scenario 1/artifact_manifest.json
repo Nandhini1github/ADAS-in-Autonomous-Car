@@ -6,7 +6,6 @@
     "pid": "2026-10-16T20:33:30.235340+00:00",
     "mpc": "2026-10-16T20:33:47.177032+00:00"
   },
-  "original_saved_directory": "presentation_20261016T203454_122284Z_11321b",
   "original_staging_directory": "preview_20261016T203313_498745Z_dc9ed8",
   "raw_recordings_and_metadata_preserved": true,
   "comparison_reports_regenerated_for_archive": true,
@@ -38,8 +37,16 @@
   },
   "files": {
     "README.md": {
-      "sha256": "06c6752a2e26f30763819e709c8c2f6b9764bf4910ba4459a27564f501d31558",
-      "size_bytes": 10639
+      "sha256": "531b66206ef3aecd89344745a7792540eb51dbec2bcdea14c270c1e5758b961a",
+      "size_bytes": 10862
+    },
+    "architecture.drawio": {
+      "sha256": "c7c306e9196fec0b2ad62ac0ef237578ec15626d7bd2a7df0c121ecc2074cdb1",
+      "size_bytes": 9651
+    },
+    "architecture.svg": {
+      "sha256": "9f6febd71c52b356e4cd51ca20f1730fea53f1aa619f1b7795c81c3e7a1c7655",
+      "size_bytes": 35384
     },
     "comparison/comparison.json": {
       "sha256": "b3ade2eb5258f236979c04959036c882b5438af72dab20626921bb69f451e2ac",
@@ -105,5 +112,11 @@
       "sha256": "956b7467db46402134844b42a15df7e182ac28df0427795ce713b5773f0b65bc",
       "size_bytes": 8877670
     }
+  },
+  "saved_directory": "run_20261016T203454_122284Z_11321b",
+  "diagram": {
+    "editable_source": "architecture.drawio",
+    "rendered_svg": "architecture.svg",
+    "exporter": "draw.io Desktop 32.4.1"
   }
 }

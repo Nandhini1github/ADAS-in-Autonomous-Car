@@ -43,6 +43,14 @@ The [saved preview configuration](preview_config.json) records the settings used
 
 This scenario uses a rolling start. After 20 settling ticks, each vehicle receives one initial velocity assignment and a warmup tick. Subsequent motion follows CARLA physics and controller commands. Manual cruise gears are held at **5 for the ego** and **6 for the lead**. The cruise controller throttle is initialized to **0.35** and **0.80**, respectively; these are initial values, not fixed throttle throughout the run. The actual measured speeds below document the result of that initialization.
 
+## Control flow
+
+![Scenario 1 CARLA control flow](architecture.svg)
+
+[Open the editable draw.io diagram](architecture.drawio). The arrows show live
+vehicle state and control commands; CSV files are generated outputs for the
+subsequent comparison. Open the `.drawio` file in draw.io to edit the diagram.
+
 ## Sensors and controller inputs
 
 | Component | Configuration and role |
@@ -54,7 +62,7 @@ This scenario uses a rolling start. After 20 settling ticks, each vehicle receiv
 
 Gap is computed as Euclidean center distance minus the two longitudinal bounding box half-lengths; this is an approximation on curved roads. Closing speed is the positive ego-minus-lead speed difference, and TTC is gap divided by closing speed when closing speed is positive enough. These are calculations from simulator ground truth.
 
-**Radar, lidar, GNSS, IMU, and camera object detection are not used in this scenario.** ROS 2 Jazzy and Autoware are installed in the presentation container, but this run executes the repository's Python CARLA adapter and controller core directly. ROS/Autoware nodes do not execute the braking algorithm in this recorded pair.
+**Radar, lidar, GNSS, IMU, and camera object detection are not used in this scenario.** ROS 2 Jazzy and Autoware are installed in the Docker container, but this run executes the repository's Python CARLA adapter and controller core directly. ROS/Autoware nodes do not execute the braking algorithm in this recorded pair.
 
 The common supervisor latches AEB on its TTC condition or its stopping-distance-plus-margin condition. The configured TTC thresholds are **3 s for FCW** and **2 s for AEB**, with a **5 m** distance margin and **8 m/s²** stopping-distance deceleration assumption. Here the distance condition triggers AEB at a recorded TTC of **4.506 s**. FCW is also asserted when AEB latches, so both flags first appear at the same sample. PID then uses acceleration feedback; MPC uses ego speed, lead speed, and gap to choose braking.
 
@@ -95,21 +103,21 @@ The comparison checks shared settings, controller identities, source hashes, CSV
 
 ## Reproduce and review before saving
 
-From the repository root, with the local [Docker presentation prerequisites](../README.md#docker-desktop-presentation) installed:
+From the repository root, with the local [Docker workflow prerequisites](../README.md#docker-desktop-workflow) installed:
 
 ```bash
-bash scripts/docker_presentation.sh simulator
-bash scripts/docker_presentation.sh start
-bash scripts/docker_presentation.sh preview \
+bash scripts/docker.sh simulator
+bash scripts/docker.sh start
+bash scripts/docker.sh preview \
   --config 'AEB scenario 1/config.json' --spawn-index 105
 ```
 
-Open **http://localhost:8765**, select **Start comparison**, and watch the live run. Review both videos, the CSV measurements, and the graphs, then select **Save results**. A fresh run is staged under `.runtime/`; saving creates a new `results/presentation_...` directory. The simulator generates new measurements without reading these archived traces as inputs.
+Open **http://localhost:8765**, select **Start comparison**, and watch the live run. Review both videos, the CSV measurements, and the graphs, then select **Save results**. A fresh run is staged under `.runtime/`; saving creates a new `results/run_...` directory. The simulator generates new measurements without reading these archived traces as inputs.
 
-To regenerate the comparison from the Scenario 1 recordings without running CARLA, use the presentation container's Python environment and write the regenerated report to a separate directory:
+To regenerate the comparison from the Scenario 1 recordings without running CARLA, use the Docker container's Python environment and write the regenerated report to a separate directory:
 
 ```bash
-bash scripts/docker_presentation.sh exec python scripts/compare_aeb_results.py \
+bash scripts/docker.sh exec python scripts/compare_aeb_results.py \
   --pid 'AEB scenario 1/town10_aeb_pid.csv' \
   --mpc 'AEB scenario 1/town10_aeb_mpc.csv' \
   --output-dir .runtime/scenario_1_recomputed

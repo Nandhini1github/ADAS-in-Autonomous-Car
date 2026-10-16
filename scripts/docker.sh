@@ -4,9 +4,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export ADAS_UID="$(id -u)"
 export ADAS_GID="$(id -g)"
 ADAS_CONTEXT="${ADAS_DOCKER_CONTEXT:-desktop-linux}"
-COMPOSE_FILE="$REPO_ROOT/docker/presentation.compose.yaml"
+COMPOSE_FILE="$REPO_ROOT/docker/compose.yaml"
 if [[ "$ADAS_CONTEXT" == desktop-linux ]]; then
-  COMPOSE_FILE="$REPO_ROOT/docker/presentation.desktop.compose.yaml"
+  COMPOSE_FILE="$REPO_ROOT/docker/compose.desktop.yaml"
 fi
 COMPOSE=(docker --context "$ADAS_CONTEXT" compose -f "$COMPOSE_FILE")
 action="${1:-status}"
@@ -37,11 +37,11 @@ case "$action" in
     ;;
   simulator)
     mkdir -p "$REPO_ROOT/.runtime/carla-saved"
-    docker --context default compose -f "$REPO_ROOT/docker/presentation.compose.yaml" build adas
-    docker --context default compose -f "$REPO_ROOT/docker/presentation.compose.yaml" up -d carla
+    docker --context default compose -f "$REPO_ROOT/docker/compose.yaml" build adas
+    docker --context default compose -f "$REPO_ROOT/docker/compose.yaml" up -d carla
     ;;
   simulator-stop)
-    docker --context default compose -f "$REPO_ROOT/docker/presentation.compose.yaml" stop carla
+    docker --context default compose -f "$REPO_ROOT/docker/compose.yaml" stop carla
     ;;
   status) "${COMPOSE[@]}" ps ;;
   stop) "${COMPOSE[@]}" stop ;;

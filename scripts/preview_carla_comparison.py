@@ -241,7 +241,7 @@ class Preview:
             if self.state["status"] != "completed":
                 raise ValueError("Finish and review a comparison before saving")
             stage = self.stages[self.state["run_id"]]
-            destination = self.root / "results" / ("presentation_" + stamp() + "_" + secrets.token_hex(3))
+            destination = self.root / "results" / ("run_" + stamp() + "_" + secrets.token_hex(3))
             self.state.update(status="saving", message="Copying reviewed outputs to results…")
         try:
             # Original trace/video metadata and stage references are preserved verbatim.

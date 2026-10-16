@@ -13,7 +13,7 @@ minimum gap **9.272 m for PID** and **15.133 m for MPC**. The scenario guide
 documents the rolling start, actual event speeds, controller tradeoffs, and
 reproduction commands.
 
-The RGB camera records the presentation and the collision sensor records
+The RGB camera records the scenario and the collision sensor records
 contact. Braking uses CARLA ground-truth vehicle state. ROS 2 Jazzy and Autoware
 are available in the container; this experiment runs the repository's Python
 controllers directly through CARLA, without an Autoware perception pipeline.
@@ -22,10 +22,10 @@ controllers directly through CARLA, without an Autoware perception pipeline.
 with CARLA running in Docker.** Start with the
 [WSL2 / Autoware / Docker setup guide](docs/wsl2_autoware.md).
 
-## Docker Desktop presentation
+## Docker Desktop workflow
 
 `adas-autoware-ros2-jazzy` runs in Docker Desktop (`desktop-linux` context), under
-the **adas-presentation** group. Its image extends the existing
+the **adas** group. Its image extends the existing
 `do18-ros:mpc-rviz-2026-09-30` image with an isolated CARLA Python environment.
 ROS 2 Jazzy, Autoware, FFmpeg, and plotting libraries are available. The project
 is mounted at `/workspace/adas`, so generated files persist in this checkout.
@@ -34,7 +34,7 @@ The GPU simulator runs as `adas-carla` in the host Docker engine (`default`
 context), using NVIDIA CDI and the locally installed CARLA 0.10.0 assets.
 The Desktop container reaches it at `host.docker.internal:2020`.
 
-These Docker files reproduce the local Linux presentation setup. They require
+These Docker files reproduce the local Linux Docker setup. They require
 the existing local base images (`do18-ros:mpc-rviz-2026-09-30` in Docker Desktop
 and `d018-ros:jazzy-autoware` in the host engine), CARLA 0.10.0 Linux assets and
 its Python 3.12 wheel, and an NVIDIA GPU configured for CDI on the host engine.
@@ -45,24 +45,24 @@ paths when using a different machine; the compose defaults describe this run's
 local installation.
 
 ```bash
-bash scripts/docker_presentation.sh simulator
-bash scripts/docker_presentation.sh start
-bash scripts/docker_presentation.sh preview
+bash scripts/docker.sh simulator
+bash scripts/docker.sh start
+bash scripts/docker.sh preview
 ```
 
 Open **http://localhost:8765**, click **Start comparison**, and watch the live
 camera and telemetry. When both runs finish, review their videos side by side
 and the comparison graphs. Click **Save results** only when you want to keep
 them. The preview stages new recordings under `.runtime/`; saving copies the
-reviewed outputs into a new `results/presentation_...` directory. Starting a
+reviewed outputs into a new `results/run_...` directory. Starting a
 preview never automatically publishes its recordings into `results/`.
 
-### 60 mph sudden-braking presentation
+### 60 mph sudden-braking scenario
 
 Use the high-speed configuration with spawn 105:
 
 ```bash
-bash scripts/docker_presentation.sh preview \
+bash scripts/docker.sh preview \
   --config "AEB scenario 1/config.json" --spawn-index 105
 ```
 
@@ -85,18 +85,18 @@ To reopen an existing temporary comparison without running again, add
 `--review-stage .runtime/<run-directory>` with its matching configuration.
 Review the videos and graphs before clicking **Save results**.
 
-Use `bash scripts/docker_presentation.sh shell` to enter the ROS/Autoware shell.
+Use `bash scripts/docker.sh shell` to enter the ROS/Autoware shell.
 For unattended recording directly into a final output directory, use a new
 directory for each experiment:
 
 ```bash
-bash scripts/docker_presentation.sh exec python scripts/run_town10_adas.py \
+bash scripts/docker.sh exec python scripts/run_town10_adas.py \
   --host host.docker.internal --port 2020 --controller both --spawn-index 105 \
-  --reload-world --video --output-dir results/presentation_run_01
-bash scripts/docker_presentation.sh exec python scripts/compare_aeb_results.py \
-  --pid results/presentation_run_01/town10_aeb_pid.csv \
-  --mpc results/presentation_run_01/town10_aeb_mpc.csv \
-  --output-dir results/presentation_run_01/comparison
+  --reload-world --video --output-dir results/run_01
+bash scripts/docker.sh exec python scripts/compare_aeb_results.py \
+  --pid results/run_01/town10_aeb_pid.csv \
+  --mpc results/run_01/town10_aeb_mpc.csv \
+  --output-dir results/run_01/comparison
 ```
 
 Each controller produces a time-series CSV, a metadata JSON, and a chase-camera
@@ -156,18 +156,24 @@ Both controllers reach overlap in the reduced-grip and delayed-braking stress
 cases. The flag above permits those documented failures during reproduction;
 their reports remain invalid and visible.
 
-## ROS 2 nodes
+## Scenario 1 control flow
 
-The standalone packages install the same controller core used by the simulation
-backends. Autoware is needed only for the optional velocity monitor.
+The CARLA adapter reads live simulator vehicle state, evaluates the shared AEB
+supervisor, and applies the selected PID or MPC brake command to the ego
+vehicle. The lead vehicle brakes after the stable-speed hold. CSVs record the
+observations and commands produced by this loop.
 
-```mermaid
-flowchart LR
-    CSV[Simulation CSV] --> Replay[CSV replay]
-    Replay -->|Telemetry| Controller[AEB shadow controller: PID or MPC]
-    Controller -->|ShadowCommand plus source sample| Recorder[CSV recorder]
-    Autoware[Autoware velocity status] --> Monitor[Optional monitor]
-```
+![Scenario 1 CARLA control flow](<AEB scenario 1/architecture.svg>)
+
+[Edit the diagram in draw.io](<AEB scenario 1/architecture.drawio>) ·
+[Sensor details and recorded outputs](<AEB scenario 1/README.md>)
+
+## Optional ROS 2 tools
+
+The ROS 2 packages support offline CSV replay, shadow brake recommendations,
+and recording. The diagram above describes the live CARLA run used for
+Scenario 1. ROS/Autoware nodes do not execute its braking algorithm.
+Autoware is needed only for the optional velocity monitor.
 
 ```bash
 source /opt/ros/jazzy/setup.bash

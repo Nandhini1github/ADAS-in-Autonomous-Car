@@ -4,22 +4,31 @@
 CSV logging, model simulation, and metrics. The math and model do not import ROS
 or CARLA. Both adapters use the same core.
 
-```mermaid
-flowchart TD
-    Config[JSON configuration] --> Core[Shared Python core]
-    Core --> Model[Longitudinal model plant]
-    Core --> CARLA[CARLA adapter]
-    Model --> ModelCSV[results/model: CSV and provenance]
-    CARLA --> CarlaCSV[CARLA CSV and provenance]
-    ModelCSV --> Metrics[Pair validation and metrics]
-    CarlaCSV --> Metrics
-    Metrics --> Reports[Markdown, JSON, plots]
-    ModelCSV --> Replay[ROS replay]
-    CarlaCSV --> Replay
-    Replay --> Shadow[ROS AEB shadow controller]
-    Core --> Shadow
-    Shadow --> Recorder[ROS recorder]
-```
+## Scenario 1 live CARLA loop
+
+![Scenario 1 CARLA control flow](<../AEB scenario 1/architecture.svg>)
+
+[Editable draw.io source](<../AEB scenario 1/architecture.drawio>) ·
+[Scenario 1 configuration, sensors, and recordings](<../AEB scenario 1/README.md>)
+
+The CARLA adapter reads simulator vehicle positions, velocities, and
+acceleration. The safety supervisor evaluates closing speed, TTC, and stopping
+distance. Once AEB latches, the chosen PID or MPC controller commands ego
+braking through the CARLA API. Normal speed regulation and pure pursuit
+steering share the same adapter. The scenario orchestrator commands the lead
+vehicle's hard braking after both vehicles hold their cruise speeds.
+
+The RGB camera feeds the live preview and recorded video. The collision sensor
+records contacts and can abort a run. Time-series CSVs and metadata are outputs;
+the comparison script reads those outputs to generate metrics and plots.
+
+## Other execution modes
+
+The longitudinal model runner uses the shared controller core with a separate
+1-D plant and writes its own CSVs and provenance under `results/model/`.
+The optional ROS tools can replay recorded telemetry into a shadow controller
+and record its recommendations. These offline tools are separate from the
+Scenario 1 live control loop.
 
 ## Command authority
 
