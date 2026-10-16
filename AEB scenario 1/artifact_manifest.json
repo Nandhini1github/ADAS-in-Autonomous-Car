@@ -37,12 +37,12 @@
   },
   "files": {
     "architecture.drawio": {
-      "sha256": "c7c306e9196fec0b2ad62ac0ef237578ec15626d7bd2a7df0c121ecc2074cdb1",
-      "size_bytes": 9651
+      "sha256": "e155855ccb7f936bf4bc9e354031b511dfac18089e83bc131d895cf74643852e",
+      "size_bytes": 12653
     },
     "architecture.svg": {
-      "sha256": "9f6febd71c52b356e4cd51ca20f1730fea53f1aa619f1b7795c81c3e7a1c7655",
-      "size_bytes": 35384
+      "sha256": "a269fcfc905389719b818f405b4f530c1b95767b6c764239286f159362189eb2",
+      "size_bytes": 40933
     },
     "comparison/comparison.json": {
       "sha256": "b3ade2eb5258f236979c04959036c882b5438af72dab20626921bb69f451e2ac",
@@ -113,7 +113,8 @@
   "diagram": {
     "editable_source": "architecture.drawio",
     "rendered_svg": "architecture.svg",
-    "exporter": "draw.io Desktop 32.4.1"
+    "exporter": "draw.io Desktop 32.4.1",
+    "style": "Black and white engineering block diagram"
   },
   "documentation": {
     "path": "../README.md",
