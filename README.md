@@ -116,9 +116,9 @@ archive. Shared controller and recording code is in
 
 ### Videos and CSVs
 
-| PID — Scenario 1 | MPC — Scenario 1 |
+| PID - Scenario 1 | MPC - Scenario 1 |
 |---|---|
-| ![PID — Scenario 1](<AEB scenario 1/town10_aeb_pid.gif>) | ![MPC — Scenario 1](<AEB scenario 1/town10_aeb_mpc.gif>) |
+| ![PID - Scenario 1](<AEB scenario 1/town10_aeb_pid.gif>) | ![MPC - Scenario 1](<AEB scenario 1/town10_aeb_mpc.gif>) |
 
 The looping GIFs contain the complete recorded clips at **640 × 360, 10 fps**.
 The original MP4s are **960 × 540, 20 fps**. Both include speed, gap, braking,
