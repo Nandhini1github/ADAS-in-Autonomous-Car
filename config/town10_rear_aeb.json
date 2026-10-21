@@ -1,0 +1,25 @@
+{
+  "scenario": "scenario_2_rear_camera_child_crossing",
+  "map": "Town10HD_Opt",
+  "perception": "rgb_depth",
+  "detector_confidence": 0.35,
+  "fixed_delta_seconds": 0.05,
+  "parking_spot": {
+    "name": "Road 8 residential curbside parking (shoulder lane +3)",
+    "ego": {"x": 7.5, "y": 127.55, "z": 0.5, "yaw": 180.0},
+    "child": {"x": 15.0, "y": 123.8, "z": 0.6, "yaw": 90.0},
+    "child_end": {"x": 15.0, "y": 142.5, "z": 0.6}
+  },
+  "ego_blueprint": "vehicle.lincoln.mkz",
+  "child_blueprint": "walker.pedestrian.0048",
+  "reverse_speed_mps": 1.4,
+  "child_speed_mps": 1.25,
+  "walker_speed_scale": 20.48,
+  "crossing_trigger_distance_m": 1.0,
+  "maximum_reverse_distance_m": 8.0,
+  "timeout_s": 25.0,
+  "stop_speed_mps": 0.08,
+  "stop_hold_s": 1.0,
+  "camera": {"width": 640, "height": 360, "fov_deg": 110.0, "height_m": 1.0, "bumper_offset_m": 0.05, "max_range_m": 15.0},
+  "aeb": {"lateral_margin_m": 0.25, "stop_margin_m": 0.8, "reaction_s": 0.25, "braking_decel_mps2": 4.0, "ttc_threshold_s": 1.8, "prediction_horizon_s": 2.0}
+}

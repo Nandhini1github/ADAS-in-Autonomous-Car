@@ -2,6 +2,9 @@ ARG BASE_IMAGE=d018-ros:jazzy-autoware
 FROM ${BASE_IMAGE}
 
 USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3-opencv \
+    && rm -rf /var/lib/apt/lists/*
 ARG ADAS_UID=1000
 ARG ADAS_GID=1000
 RUN groupmod --non-unique --gid ${ADAS_GID} aw \
@@ -11,7 +14,7 @@ COPY --from=carla_api carla-0.10.0-cp312-cp312-linux_x86_64.whl /tmp/carla-0.10.
 RUN python3 -m venv --system-site-packages /opt/adas-venv \
     && /opt/adas-venv/bin/pip install --no-index --no-deps /tmp/carla-0.10.0-cp312-cp312-linux_x86_64.whl \
     && rm /tmp/carla-0.10.0-cp312-cp312-linux_x86_64.whl \
-    && /opt/adas-venv/bin/python -c "import carla, matplotlib, numpy, PIL" \
+    && /opt/adas-venv/bin/python -c "import carla, matplotlib, numpy, PIL, cv2" \
     && command -v ffmpeg
 COPY --chmod=755 docker/adas-entrypoint.sh /usr/local/bin/adas-entrypoint
 ENV PATH="/opt/adas-venv/bin:${PATH}" PYTHONUNBUFFERED=1

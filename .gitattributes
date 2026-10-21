@@ -4,3 +4,5 @@
 *.yaml text eol=lf
 *.yml text eol=lf
 *.csv text eol=lf
+# Keep the recorded bytes used by Scenario 2 provenance checksums.
+"AEB scenario 2/*.csv" -text whitespace=cr-at-eol

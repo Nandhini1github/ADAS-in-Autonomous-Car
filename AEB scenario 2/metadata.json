@@ -1,0 +1,221 @@
+{
+  "schema_version": 1,
+  "scenario": "scenario_2_rear_camera_child_crossing",
+  "source": "carla",
+  "created_at_utc": "2026-10-21T19:18:26.865118+00:00",
+  "completed": true,
+  "outcome": "completed",
+  "map": "Carla/Maps/Town10HD_Opt",
+  "versions": {
+    "client": "0.10.0",
+    "server": "0.10.0"
+  },
+  "perception": "rgb_depth",
+  "pedestrian_actor_state_used_for_braking": false,
+  "config": {
+    "scenario": "scenario_2_rear_camera_child_crossing",
+    "map": "Town10HD_Opt",
+    "perception": "rgb_depth",
+    "detector_confidence": 0.35,
+    "fixed_delta_seconds": 0.05,
+    "parking_spot": {
+      "name": "Road 8 residential curbside parking (shoulder lane +3)",
+      "ego": {
+        "x": 7.5,
+        "y": 127.55,
+        "z": 0.5,
+        "yaw": 180.0
+      },
+      "child": {
+        "x": 15.0,
+        "y": 123.8,
+        "z": 0.6,
+        "yaw": 90.0
+      },
+      "child_end": {
+        "x": 15.0,
+        "y": 142.5,
+        "z": 0.6
+      }
+    },
+    "ego_blueprint": "vehicle.lincoln.mkz",
+    "child_blueprint": "walker.pedestrian.0048",
+    "reverse_speed_mps": 1.4,
+    "child_speed_mps": 1.25,
+    "walker_speed_scale": 20.48,
+    "crossing_trigger_distance_m": 1.0,
+    "maximum_reverse_distance_m": 8.0,
+    "timeout_s": 25.0,
+    "stop_speed_mps": 0.08,
+    "stop_hold_s": 1.0,
+    "camera": {
+      "width": 640,
+      "height": 360,
+      "fov_deg": 110.0,
+      "height_m": 1.0,
+      "bumper_offset_m": 0.05,
+      "max_range_m": 15.0
+    },
+    "aeb": {
+      "lateral_margin_m": 0.25,
+      "stop_margin_m": 0.8,
+      "reaction_s": 0.25,
+      "braking_decel_mps2": 4.0,
+      "ttc_threshold_s": 1.8,
+      "prediction_horizon_s": 2.0
+    }
+  },
+  "events": [
+    {
+      "name": "pedestrian_visible_in_rear_camera",
+      "time_s": 0.05
+    },
+    {
+      "name": "child_started_crossing",
+      "time_s": 2.5,
+      "reverse_distance_m": 1.0412235260009766
+    },
+    {
+      "name": "aeb_activated",
+      "time_s": 3.95,
+      "speed_mps": 1.3222838640213013,
+      "clearance_m": 2.299294653492847,
+      "reason": "predicted_crossing",
+      "target_instance_id": 3,
+      "bbox_xyxy": [
+        107,
+        168,
+        170,
+        277
+      ]
+    },
+    {
+      "name": "vehicle_stopped",
+      "time_s": 4.2,
+      "speed_mps": 0.05126518178896324,
+      "reverse_distance_m": 2.829298257827759
+    },
+    {
+      "name": "child_crossed_reverse_centerline",
+      "time_s": 5.55
+    },
+    {
+      "name": "child_finished_crossing",
+      "time_s": 17.35
+    },
+    {
+      "name": "completed",
+      "time_s": 17.35
+    }
+  ],
+  "collision_events": [],
+  "row_count": 347,
+  "cleanup_errors": [],
+  "detector": {
+    "name": "OpenCV Zoo YOLOX-s COCO person",
+    "path": "/home/nandhir/Nandhini/ADAS-in-Autonomous-Car/.runtime/models/object_detection_yolox_2022nov.onnx",
+    "sha256": "c5c2d13e59ae883e6af3b45daea64af4833a4951c92d116ec270d9ddbe998063",
+    "confidence": 0.35
+  },
+  "world_settings": {
+    "synchronous_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "weather": "ClearNoon"
+  },
+  "spawns": {
+    "ego": {
+      "x": 7.501747131347656,
+      "y": 127.52913665771484,
+      "z": 0.035682208836078644,
+      "yaw": -179.98687744140625
+    },
+    "child": {
+      "x": 15.0,
+      "y": 123.79999542236328,
+      "z": 0.730150043964386,
+      "yaw": 90.0
+    }
+  },
+  "child": {
+    "blueprint": "walker.pedestrian.0048",
+    "age": "child",
+    "actor_id": 57,
+    "requested_speed_mps": 1.25,
+    "walker_control_speed": 25.6,
+    "speed_scale_reason": "CARLA 0.10 walker input divides by 4096 cm/s; child movement cap is 200 cm/s"
+  },
+  "ego": {
+    "blueprint": "vehicle.lincoln.mkz",
+    "half_length_m": 2.4459850788116455,
+    "half_width_m": 0.9178230166435242
+  },
+  "parking_lane": {
+    "road_id": 8,
+    "lane_id": 3,
+    "lane_type": "Shoulder",
+    "s": 7.637523568810094
+  },
+  "rear_camera": {
+    "width": 640,
+    "height": 360,
+    "fov_deg": 110.0,
+    "height_m": 1.0,
+    "bumper_offset_m": 0.05,
+    "max_range_m": 15.0,
+    "x_m": -2.5022005938924847,
+    "yaw_deg": 180.0,
+    "lens_k": 0.0,
+    "lens_kcube": 0.0
+  },
+  "physics_wakeup": {
+    "speed_mps": 0.1,
+    "assignments": 1,
+    "reason": "CARLA 0.10 Chaos sleeping-body workaround at reverse launch"
+  },
+  "minimum_gt_clearance_during_overlap_m": 1.9654792730252666,
+  "child_crossed_path": true,
+  "child_finished": true,
+  "aeb_triggered": true,
+  "video": {
+    "path": "AEB scenario 2/rear_aeb.mp4",
+    "fps": 20.0,
+    "width": 1280,
+    "height": 360,
+    "camera_width": 640,
+    "frame_count": 347,
+    "first_frame": 35478449,
+    "last_frame": 35478795,
+    "telemetry_overlay": true,
+    "layout": "rear_and_overview",
+    "finalized": true
+  },
+  "collision_count": 0,
+  "source_sha256": {
+    "__init__.py": "e5c87dcf110dec26f3eb76bdab27fc34dc1246dbacd820a79cd1c5db60325554",
+    "aeb.py": "f87858c22bfbf838557d5fad073889de1a6a48bcee5e5f1a0fee8214124e185b",
+    "benchmark.py": "c442770b951eb614316b434d0831cfe0e602a94bf3eb1890ff6b50aec0473665",
+    "carla_runner.py": "7f7aada1dfbb277db77abeb615b1b901d0f480244c3833bc1af977e8551e4269",
+    "config.py": "fe794b545f74209fce1b78874700458f6aaa9d11aeaffa9c54ac7759652f28b7",
+    "csv_logger.py": "d6ee543f868ab296346341a5b4a663920aee9283d1b799d1af727f05e0863dae",
+    "lateral.py": "a33c398fcf2a2cd67e5eff0dae1e440b496462bfa984579c3ea350151a92bbcc",
+    "longitudinal.py": "4e3f41e0b76404e677b7bc37ad5bffcbab6a74befa17ee8732c0092bbbd42850",
+    "metrics.py": "78eabdb275af069943f17f3bd3c6095e330ad38733f4fea05bc7e61912970fe2",
+    "provenance.py": "0418c4c34b2f5ac2b392ff526861e0f0da24db5e29833716e201dca9f1a30017",
+    "rear_perception.py": "578a4ea8fc2d5db0c2a52160bf21c82d39b6236a7862d6beb581a03eb766e503",
+    "rear_rgb.py": "8472649025cf8cb2d6cc6e74cea8faaec2f4a1ba8fd86f44f1f28395ce0e595f",
+    "rear_runner.py": "96ba9358e116c088cc2b395cccc98e3b6d19e6ec889bfc17620b233e3f750687",
+    "rear_video.py": "845ea258973ab6ef6e79b5eeeda4e0514e7043ef5c2f5b8191c0b1bc98c0f948",
+    "safety.py": "026474742816b8c26d9cd223e6028d0e6fd20c3a38836f9dc16b78a0166c18c5",
+    "scenario.py": "58c3c534f944acde9053ec1779d880104e0d585b14cd761977ac8eb1c219a0d0",
+    "units.py": "749ad988c650df08cbf4bea4a293c560241671ea1851b7bc61cfa5e2a8f8bc59",
+    "video.py": "0a3a3e7f482a711b3ec4c71022c6b7c0572be4af161e31b30f993ade796ee123"
+  },
+  "artifacts_sha256": {
+    "config.json": "82a1c225aaec589751f03037ea343f194d27ab4fd54405bb64cbb0c9f3593391",
+    "depth_at_brake.png": "860cd50d8980b08f90d5b2a8b98318c762534c19bc87e0bd24638bb792325801",
+    "overview_at_brake.png": "4a1f2554d6811882d22c98b1a74df73492076c4edf3650567d849f6ad6a82aa0",
+    "rear_aeb.csv": "4e856ed2d0a5b5e5854cf22a4fba5ab60161c12ff5889c582f02aaff5189e0f7",
+    "rear_aeb.mp4": "d3d90036f296eeded525df187baab9fce2ed2068762430d2b43800530fc7e642",
+    "rear_at_brake.png": "43c113c6ea0e33c1d74b9f958898eaa87a107d01518ddc1f770918768f17de51"
+  }
+}

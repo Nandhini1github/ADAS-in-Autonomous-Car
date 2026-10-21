@@ -6,7 +6,11 @@ brakes from 60 mph. The Docker environment includes ROS 2 Jazzy and Autoware;
 the recorded experiment runs the repository's Python CARLA adapter and
 controller core directly.
 
-[Docker setup](#docker-setup) · [Scenario 1](#scenario-1) ·
+Scenario 2 adds rear-camera AEB while reversing from a Town10 curbside parking
+space as a child crosses behind the vehicle. Its implementation is ready for
+live validation; see [Scenario 2 setup and commands](docs/scenario_2_rear_aeb.md).
+
+[Docker setup](#docker-setup) · [Scenario 1](#scenario-1) · [Scenario 2](#scenario-2) ·
 [Videos and CSVs](#videos-and-csvs) · [Sensors](#sensors-and-controller-inputs) ·
 [Results](#measured-comparison)
 
@@ -304,6 +308,59 @@ bash scripts/docker.sh exec python scripts/compare_aeb_results.py \
 
 This produces summary CSV, JSON, Markdown, PNG, and SVG outputs. To record a
 fresh pair, use the [Docker preview workflow](#start-scenario-1-and-review-before-saving).
+
+## Scenario 2
+
+### Rear camera AEB during a child crossing
+
+The Lincoln MKZ reverses at a requested **1.4 m/s (5.0 km/h)** from an open
+curbside parking space on **Town10HD_Opt, Road 8, shoulder lane +3**. A
+runtime-verified child actor, `walker.pedestrian.0048`, starts crossing from
+the sidewalk after the car has reversed **1 m**. Rear camera detections can
+latch full braking, and the vehicle holds its stop while the child crosses.
+
+Aligned **640 × 360, 110°** rear RGB and depth cameras run at **20 Hz** of
+simulation time. **YOLOX-s detects people in RGB through OpenCV DNN**; matching
+CARLA depth pixels supply distance. This uses simulated depth, so it does not
+measure distance from RGB alone. The dedicated Scenario 2 CSV, metadata, and
+side-by-side rear/overview video are separate from the Scenario 1 PID/MPC
+comparison format. The child identity is verified from the spawned blueprint;
+the detector recognizes the COCO `person` class rather than age.
+
+With the packaged CARLA server running and idle, use the existing Desktop
+container from the repository root:
+
+```bash
+bash scripts/docker.sh exec python scripts/download_rear_detector.py
+bash scripts/docker.sh exec python scripts/run_rear_camera_aeb.py \
+  --host host.docker.internal --port 2020
+```
+
+The download verifies the pinned approximately 36 MB OpenCV Zoo model. The
+client environment requires NumPy, OpenCV, and Pillow, plus FFmpeg for video;
+the Dockerfile installs `python3-opencv`. See the
+[setup instructions](docs/scenario_2_rear_aeb.md#run-with-the-packaged-simulator)
+and [CARLA 0.10.0 compatibility notes](docs/scenario_2_rear_aeb.md#carla-0100-compatibility)
+for automatic reverse, the startup physics wakeup, and the child speed
+correction with measured speed logging.
+
+**Recorded successfully on 21 October 2026:** rear RGB detection triggered
+AEB at **3.95 s**, while reversing at **1.32 m/s**. The vehicle reached the
+**0.08 m/s** stop threshold at **4.20 s** and held its brakes until the child
+finished crossing. The run recorded **zero collision contacts** and a minimum
+evaluated rear clearance of **1.97 m** while the child overlapped the vehicle's
+reverse corridor.
+
+[![Scenario 2 rear camera and parking overview](<AEB scenario 2/preview.png>)](<AEB scenario 2/rear_aeb.mp4>)
+
+[Watch the video](<AEB scenario 2/rear_aeb.mp4>) ·
+[Telemetry CSV](<AEB scenario 2/rear_aeb.csv>) ·
+[Run metadata](<AEB scenario 2/metadata.json>) ·
+[Scenario 2 setup and measurements](docs/scenario_2_rear_aeb.md)
+
+This is one recorded simulator demonstration using RGB person detection and
+simulated depth, with the release-specific compatibility settings documented
+above. It does not establish general pedestrian-detection performance.
 
 ## Additional tools and documentation
 
