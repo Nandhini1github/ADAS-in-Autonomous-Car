@@ -351,7 +351,7 @@ finished crossing. The run recorded **zero collision contacts** and a minimum
 evaluated rear clearance of **1.97 m** while the child overlapped the vehicle's
 reverse corridor.
 
-[![Scenario 2 rear camera and parking overview](<AEB scenario 2/preview.png>)](<AEB scenario 2/rear_aeb.mp4>)
+https://github.com/user-attachments/assets/156aab17-53c6-492d-a897-719cde223f74
 
 [Watch the video](<AEB scenario 2/rear_aeb.mp4>) ·
 [Telemetry CSV](<AEB scenario 2/rear_aeb.csv>) ·
