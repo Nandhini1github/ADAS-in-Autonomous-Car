@@ -319,6 +319,18 @@ runtime-verified child actor, `walker.pedestrian.0048`, starts crossing from
 the sidewalk after the car has reversed **1 m**. Rear camera detections can
 latch full braking, and the vehicle holds its stop while the child crosses.
 
+**Controller used:** PI speed control for normal reversing, combined with a
+rule-based rear AEB supervisor for emergency braking.
+
+| Function | Scenario 2 implementation |
+|---|---|
+| Reverse speed | `LongitudinalPID` configured as **PI**: `Kp=0.30`, `Ki=0.08`, `Kd=0`. Target speed is **1.4 m/s**; throttle is limited to **30%**. |
+| Emergency braking | `RearAEB` predicts pedestrian entry into the reversing corridor and checks **TTC ≤ 1.8 s** or the stopping-distance threshold. When triggered, it overrides speed control with **zero throttle and 100% brake**, holding the stop while the child crosses. |
+| Steering | Fixed at **zero** for straight reversing. |
+
+**MPC is not used in Scenario 2.** Emergency braking uses a fixed full-brake
+command; it does not use Scenario 1's PID deceleration-tracking controller.
+
 Aligned **640 × 360, 110°** rear RGB and depth cameras run at **20 Hz** of
 simulation time. **YOLOX-s detects people in RGB through OpenCV DNN**; matching
 CARLA depth pixels supply distance. This uses simulated depth, so it does not
